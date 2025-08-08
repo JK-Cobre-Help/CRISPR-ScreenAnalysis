@@ -1,5 +1,5 @@
 __default__:
-    account: kirklandj-lab
+    account: sansam-lab
     partition: serial
     time: 08:00:00
     cpus-per-task: 2
