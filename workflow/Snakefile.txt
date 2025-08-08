@@ -1,0 +1,507 @@
+configfile: "config/config.yml"
+
+##################################################################
+##                         Author Info                          ##
+##################################################################
+
+# Author: Kevin A. Boyd
+# Email: kevinboyd76@gmail.com
+# GitHub: https://github.com/kevinboyd76
+# Date Created: October 18, 2024
+# Last Modified: August 4, 2025
+# Version: 1.1.0
+#
+# Description: This Snakemake workflow processes Cut-and-Tag sequencing data
+# from raw paired-end FASTQ files through quality control, read alignment using
+# Bowtie2, BigWig signal track generation (raw, CPM-normalized, and scaled),
+# peak calling via MACS2, fragment length analysis, and QC visualizations.
+# The pipeline outputs scaled and normalized coverage tracks, peak files,
+# FRiP scores, and summary plots to assess quality and replicate consistency.
+# 
+# Adapted from: Ye Zheng, Kami Ahmad, Steven Henikoff
+# Original Protocol DOI: dx.doi.org/10.17504/protocols.io.bjk2kkye
+
+##################################################################
+##                  Specific Steps in Pipeline                  ##
+##################################################################
+
+#  Steps:
+#  1) Quality control using FastQC (per read) and MultiQC (summary report)
+#  2) Contamination check using FastQ Screen
+#  3) Align reads to reference genome using Bowtie2 (paired-end)
+#  4) Convert SAM to BAM, then sort and index BAM files
+#  5) Generate raw and CPM-normalized BigWig signal tracks (per sample)
+#  6) Calculate total aligned reads and scale factors (1 / reads per million)
+#  7) Generate scaled BigWig tracks using scale factor (per sample)
+#  8) Call peaks using MACS2 with fixed q-value threshold (per sample)
+#  9) Extract fragment lengths from aligned SAM files (per sample)
+# 10) Plot fragment length distributions using R (violin and line plots)
+# 11) Process BAM to BED, filter and bin fragment data (for correlation analysis)
+# 12) Calculate FRiP scores (Fraction of Reads in Peaks) for QC (per sample)
+# 13) Generate correlation plot of binned fragment counts across samples
+# 14) Create summary plot of peak count and FRiP scores
+# 
+#  Outputs:
+#    • FastQC and MultiQC HTML reports
+#    • FastQ Screen PNG plots
+#    • Raw, CPM, and scaled BigWig files
+#    • MACS2 peak files (narrowPeak)
+#    • Fragment length text files
+#    • Summary plots: alignment, fragment length, correlation, and peaks
+
+##################################################################
+##                    Define input functions                    ##
+##################################################################
+
+import pandas as pd
+
+# read the CSV file and set an index using the values in the "sample" column.
+samples_table = pd.read_csv("config/samples.csv").set_index("sample", drop=False)
+
+# fastq filename input function definition set to Python dictionary
+def fq_dict_from_sample(wildcards):
+  return {
+    "fq1": samples_table.loc[wildcards.sample, "fastq1"],
+    "fq2": samples_table.loc[wildcards.sample, "fastq2"]
+  }
+
+##################################################################
+##                          Rule All                            ##
+##################################################################
+
+rule all:
+    input:
+        expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
+        "results/qc/multiqc/multiqc_report.html",
+        expand("results/qc/fastq_screen/{sample}_screen.png", sample=samples_table.index),
+        expand("results/alignment/sam/{sample}_bowtie2.sam", sample=samples_table.index),
+        expand("results/alignment/bam/{sample}_bowtie2.bam", sample=samples_table.index),
+        expand("results/alignment/bam/{sample}.sorted.bam", sample=samples_table.index),
+        expand("results/alignment/bigwig/{sample}_raw.bw", sample=samples_table.index),
+        expand("results/alignment/{sample}_total_reads.txt", sample=samples_table.index),
+        expand("results/alignment/bigwig/scale_reads/{sample}_scale_factor.txt", sample=samples_table.index),
+        expand("results/alignment/bigwig/scale_reads/{sample}_scaled.bw", sample=samples_table.index),
+        expand("results/peakCalling/{sample}_0.05_peaks.narrowPeak", sample=samples_table.index),
+        expand("results/alignment/sam/{sample}_fragmentLen.txt", sample=samples_table.index),
+        "results/plots/alignment_summary_plot.png",
+        "results/plots/fragment_length_plot.png",
+        expand("results/alignment/bed/{sample}_bowtie2.fragmentsCount.bin500.bed", sample=samples_table.index),
+        expand("results/alignment/bam/{sample}_frip.txt", sample=samples_table.index),
+        "results/plots/fragCount_correlation_plot.pdf",
+        "results/plots/peak_summary_plot.png"
+
+##################################################################
+##                       Quality Control                        ##
+##################################################################
+
+# run fastqc on fastq.gz files before trimming
+rule fastqc_reads:
+    input:
+        unpack(fq_dict_from_sample)
+    output:
+        html1="results/qc/fastqc/{sample}_R1_fastqc.html",
+        zip1="results/qc/fastqc/{sample}_R1_fastqc.zip",
+        html2="results/qc/fastqc/{sample}_R2_fastqc.html",
+        zip2="results/qc/fastqc/{sample}_R2_fastqc.zip"
+    envmodules:
+        config["fastqc"]
+    log: "results/logs/snakelogs/fastqc_reads.{sample}.log"
+    shell:
+        """
+        # Run FastQC with output directed to writable folder
+        fastqc -o results/qc/fastqc {input.fq1}
+        fastqc -o results/qc/fastqc {input.fq2}
+
+        # Rename output files to match specified output paths
+        dir="results/qc/fastqc"
+        bsename=$(basename {input.fq1} .gz)
+        bsename=$(basename ${{bsename}} .fastq)
+        mv ${{dir}}/${{bsename}}_fastqc.html {output.html1}
+        mv ${{dir}}/${{bsename}}_fastqc.zip {output.zip1}
+        
+        bsename=$(basename {input.fq2} .gz)
+        bsename=$(basename ${{bsename}} .fastq)
+        mv ${{dir}}/${{bsename}}_fastqc.html {output.html2}
+        mv ${{dir}}/${{bsename}}_fastqc.zip {output.zip2}
+        """
+
+##################################################################
+##                     Multiqc on Raw Fastqs                    ##
+##################################################################
+
+rule multiqc_raw:
+    input:
+        expand("results/qc/fastqc/{sample}_R1_fastqc.zip", sample=samples_table.index),
+        expand("results/qc/fastqc/{sample}_R2_fastqc.zip", sample=samples_table.index)
+    output:
+        "results/qc/multiqc/multiqc_report.html"
+    params:
+        outdir="results/qc/multiqc"
+    envmodules:
+        config["multiqc"]
+    log:
+        "results/logs/multiqc/multiqc.log"
+    shell:
+        """
+        rm -rf {params.outdir}
+        mkdir -p {params.outdir}
+        multiqc results/qc/fastqc -o {params.outdir} 2> {log}
+        """
+
+##################################################################
+##                         Fastq Screen                         ##
+##################################################################
+
+rule fastq_screen:
+    input:
+        unpack(fq_dict_from_sample)
+    output:
+        fastq_info="results/qc/fastq_screen/{sample}_screen.png"
+    params:
+        out_dir="results/qc/fastq_screen",
+        config_file="resources/fastq_screen.conf"
+    envmodules:
+        config["fastq_screen"]
+    log: "results/logs/snakelogs/fastq_screen.{sample}.log"
+    shell:
+        """
+        fastq_screen --conf {params.config_file} --threads 16 --outdir {params.out_dir} {input.fq1}
+        
+        # Extract the base name without .fastq.gz
+        base_name=$(basename {input.fq1} .fastq.gz)
+        
+        # Move or link the output file to the expected output
+        mv {params.out_dir}/${{base_name}}_screen.png {output.fastq_info}
+        """
+
+##################################################################
+##                       Read Alignment                         ##
+##################################################################
+
+rule align_with_bowtie2:
+    input:
+        unpack(fq_dict_from_sample)
+    output:
+        sam_file="results/alignment/sam/{sample}_bowtie2.sam",
+        bowtie2_summary="results/alignment/sam/bowtie2_summary/{sample}_bowtie2.txt"
+    params:
+        bowtie2_genome=config["bowtie2_genome"]
+    envmodules:
+        config["bowtie2"]
+    log: "results/logs/snakelogs/align_with_bowtie2.{sample}.log"
+    shell:
+        """
+        bowtie2 --end-to-end --very-sensitive --no-mixed --no-discordant --phred33 -I 10 -X 700 -p 16 \
+        -x {params.bowtie2_genome} \
+        -1 {input.fq1} -2 {input.fq2} -S {output.sam_file} &> {output.bowtie2_summary}
+        """
+
+##################################################################
+##                     SAM to BAM Conversion                    ##
+##################################################################
+
+rule sam_to_bam:
+    input:
+        sam_file="results/alignment/sam/{sample}_bowtie2.sam"
+    output:
+        bam_file="results/alignment/bam/{sample}_bowtie2.bam"
+    envmodules:
+        config["samtools"]
+    log: "results/logs/snakelogs/sam_to_bam.{sample}.log"
+    shell:
+        """
+        samtools view -bS {input.sam_file} > {output.bam_file}
+        """
+
+##################################################################
+##                  BAM Sorting and Indexing                    ##
+##################################################################
+
+rule sort_bam:
+    input:
+        bam_file="results/alignment/bam/{sample}_bowtie2.bam"
+    output:
+        sorted_bam="results/alignment/bam/{sample}.sorted.bam",
+        bai="results/alignment/bam/{sample}.sorted.bam.bai"
+    envmodules:
+        config["samtools"]
+    log: "results/logs/snakelogs/sort_bam.{sample}.log"
+    shell:
+        """
+        samtools sort -o {output.sorted_bam} {input.bam_file}
+        samtools index -@ 12 {output.sorted_bam} > {output.bai}
+        """
+
+##################################################################
+##                       BigWig Generation                      ##
+##################################################################
+
+rule make_bigwig_raw:
+    input:
+        sorted_bam="results/alignment/bam/{sample}.sorted.bam"
+    output:
+        bigwig="results/alignment/bigwig/{sample}_raw.bw",
+        bigwig_cpm="results/alignment/bigwig/{sample}_cpm.bw"
+    params:
+        genome_size=config["effective_genome_size"],
+        binSize=config["binSize"]
+    envmodules:
+        config["deeptools"]
+    log: "results/logs/snakelogs/make_bigwig_raw.{sample}.log"
+    shell:
+        """
+        bamCoverage -b {input.sorted_bam} -o {output.bigwig} --effectiveGenomeSize {params.genome_size} --binSize {params.binSize}
+        bamCoverage -b {input.sorted_bam} -o {output.bigwig_cpm} --effectiveGenomeSize {params.genome_size} --binSize {params.binSize} --normalizeUsing CPM
+        """
+
+
+##################################################################
+##                  Total Reads and Scale Factor                ##
+##################################################################
+
+rule calculate_total_reads:
+    input:
+        sorted_bam="results/alignment/bam/{sample}.sorted.bam"
+    output:
+        total_reads="results/alignment/{sample}_total_reads.txt",
+        scale_factor="results/alignment/bigwig/scale_reads/{sample}_scale_factor.txt"
+    envmodules:
+        config["samtools"]
+    log: "results/logs/snakelogs/calculate_total_reads.{sample}.log"
+    shell:
+        """
+        total_reads=$(samtools view -c -F 4 {input.sorted_bam})
+        scale_factor=$(echo "1 / ($total_reads / 1000000)" | bc -l)
+        echo $total_reads > {output.total_reads}
+        echo $scale_factor > {output.scale_factor}
+        """
+
+##################################################################
+##              Scaled BigWig with Normalization                ##
+##################################################################
+
+rule make_bigwig_scaled:
+    input:
+        sorted_bam="results/alignment/bam/{sample}.sorted.bam",
+        scale_factor="results/alignment/bigwig/scale_reads/{sample}_scale_factor.txt"
+    output:
+        bigwig_scaled="results/alignment/bigwig/scale_reads/{sample}_scaled.bw"
+    params:
+        genome_size=config["effective_genome_size"],
+        binSize=config["binSize"]
+    envmodules:
+        config["deeptools"]
+    log: "results/logs/snakelogs/make_bigwig_scaled.{sample}.log"
+    shell:
+        """
+        scale_factor=$(cat {input.scale_factor})
+        bamCoverage -b {input.sorted_bam} -o {output.bigwig_scaled} --effectiveGenomeSize {params.genome_size} --binSize {params.binSize} --scaleFactor $scale_factor
+        """
+
+##################################################################
+##                        MACS2 Peak Calling                    ##
+##################################################################
+
+rule macs2_peak_calling:
+    input:
+        bam="results/alignment/bam/{sample}.sorted.bam"
+    output:
+        peaks="results/peakCalling/{sample}_0.05_peaks.narrowPeak"
+    params:
+        genome=config["genome_size"],
+        qvalue=config["macs2_qvalue"],
+        sample_name="{sample}",
+        output_dir="results/peakCalling/"
+    envmodules:
+        config["macs2"]
+    log: "results/logs/snakelogs/macs2_peak_calling.{sample}.log"
+    shell:
+        """
+        macs2 callpeak -t {input.bam} \
+        -g {params.genome} -f BAMPE -n {params.sample_name}_{params.qvalue} \
+        --outdir {params.output_dir} -q {params.qvalue} --keep-dup all --nomodel \
+        2>{params.output_dir}/{params.sample_name}_macs2Peak_summary.txt
+        """
+
+##################################################################
+##                  Alignment Summary Plot                      ##
+##################################################################
+
+rule generate_alignment_plots:
+    input:
+        sample_list=expand("results/alignment/sam/bowtie2_summary/{sample}_bowtie2.txt", sample=samples_table.index),
+        metadata="config/samples.csv"
+    output:
+        "results/plots/alignment_summary_plot.png"
+    params:
+        out_dir="results/plots"
+    envmodules:
+        config["R"],
+        config["bioconductor"]
+    log:
+        "results/logs/snakelogs/generate_alignment_plots.log"
+    shell:
+        """
+        Rscript scripts/plot_alignment.R {input.sample_list} {input.metadata} {params.out_dir}
+        """
+
+##################################################################
+##                   Fragment Length Files                      ##
+##################################################################
+
+rule generate_fragmentLength_files:
+    input:
+        # Input for each Bowtie2 sam
+        sam_file="results/alignment/sam/{sample}_bowtie2.sam"
+    output:
+        fragLen="results/alignment/sam/{sample}_fragmentLen.txt"
+    envmodules:
+        config["samtools"]
+    log: "results/logs/snakelogs/generate_fragmentLength_files.{sample}.log"
+    shell:
+        """
+        samtools view -F 0x04 {input.sam_file} | \
+        awk -F'\\t' '{{print ($9 < 0 ? -$9 : $9)}}' | \
+        sort | uniq -c | \
+        awk -v OFS="\\t" '{{print $2, $1/2}}' > {output.fragLen}
+        """
+
+##################################################################
+##                    Fragment Length Plot                      ##
+##################################################################
+
+rule generate_fragLen_plots:
+    input:
+        sample_list=expand("results/alignment/sam/{sample}_fragmentLen.txt", sample=samples_table.index),
+        metadata="config/samples.csv"
+    output:
+        "results/plots/fragment_length_plot.png"
+    params:
+        out_dir="results/plots"
+    envmodules:
+        config["R"],
+        config["bioconductor"]
+    log:
+        "results/logs/snakelogs/generate_fragLen_plots.log"
+    shell:
+        """
+        Rscript scripts/plot_fragLength.R {input.sample_list} {input.metadata} {params.out_dir}
+        """
+
+##################################################################
+##                   Fragment Length Processing                 ##
+##################################################################
+
+rule process_fragment_length:
+    input:
+        sam_file="results/alignment/sam/{sample}_bowtie2.sam"
+    output:
+        mapped_bam="results/alignment/bam/{sample}_bowtie2.mapped.bam",
+        bed_file="results/alignment/bed/{sample}_bowtie2.bed",
+        clean_bed="results/alignment/bed/{sample}_bowtie2.clean.bed",
+        fragments_bed="results/alignment/bed/{sample}_bowtie2.fragments.bed",
+        binned_counts="results/alignment/bed/{sample}_bowtie2.fragmentsCount.bin500.bed"
+    params:
+        binLen=500
+    envmodules:
+        config["samtools"],
+        config["bedtools"]
+    log: "results/logs/snakelogs/process_fragment_length.{sample}.log"
+    shell:
+        """
+        # Set variables
+        sampleName={wildcards.sample}
+        histName=$(basename "{input.sam_file}")
+
+        # Filter and keep the mapped read pairs
+        samtools view -bS -F 0x04 {input.sam_file} -o {output.mapped_bam}
+
+        # Convert into bed file format
+        bedtools bamtobed -i {output.mapped_bam} -bedpe > {output.bed_file}
+
+        # Keep the read pairs that are on the same chromosome and fragment length less than 1000bp
+        awk '$1==$4 && $6-$2 < 1000 {{print $0}}' {output.bed_file} > {output.clean_bed}
+
+        # Only extract the fragment-related columns
+        cut -f 1,2,6 {output.clean_bed} | sort -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
+
+        # Bin the fragment counts
+        awk -v w={params.binLen} '{{print $1, int(($2 + $3)/(2*w))*w + w/2}}' {output.fragments_bed} | \
+        sort -k1,1V -k2,2n | uniq -c | \
+        awk -v OFS="\\t" '{{print $2, $3, $1}}' | sort -k1,1V -k2,2n > {output.binned_counts}
+        """
+
+##################################################################
+##                        Calculate FRiP                        ##
+##################################################################
+
+rule calculate_frip:
+    input:
+        mapped_bam="results/alignment/bam/{sample}_bowtie2.mapped.bam",
+        clean_bed="results/alignment/bed/{sample}_bowtie2.clean.bed",
+        peak_bed="results/peakCalling/{sample}_0.05_peaks.narrowPeak"
+    output:
+        frip_data="results/alignment/bam/{sample}_frip.txt"
+    envmodules:
+        config["samtools"],
+        config["bedtools"]
+    log: "results/logs/snakelogs/calculate_frip.{sample}.log"
+    shell:
+        """
+        # Count total mapped reads
+        total_mapped=$(samtools view -c {input.mapped_bam})
+        
+        # Intersect fragments with peaks
+        intersected=$(bedtools intersect -a {input.clean_bed} -b {input.peak_bed} -u | wc -l)
+        
+        # Calculate FRiP value
+        frip=$(echo "scale=4; ($intersected / $total_mapped) * 100" | bc)
+        
+        # Write to output
+        echo -e "Sample\\tTotalMapped\\tInPeaks\\tFRiP" > {output.frip_data}
+        echo -e "{wildcards.sample}\\t$total_mapped\\t$intersected\\t$frip" >> {output.frip_data}
+        """
+
+##################################################################
+##                       Correlation Plot                       ##
+##################################################################
+
+rule generate_correlation_plot:
+    input:
+        # Input for each fragment count file
+        sample_list=expand("results/alignment/bed/{sample}_bowtie2.fragmentsCount.bin500.bed", sample=samples_table.index)
+    output:
+        "results/plots/fragCount_correlation_plot.pdf"
+    params:
+        work_dir="results/plots"
+    envmodules:
+        config["R"]
+    log: "results/logs/snakelogs/generate_correlation_plot.log"
+    shell:
+        """
+        Rscript scripts/plot_correlation.R {input.sample_list} {params.work_dir}
+        """
+
+##################################################################
+##                       Peak Summary Plot                      ##
+##################################################################
+
+rule generate_peak_summary_plots:
+    input:
+        peak_list=expand("results/peakCalling/{sample}_0.05_peaks.narrowPeak", sample=samples_table.index),
+        frip_list=expand("results/alignment/bam/{sample}_frip.txt", sample=samples_table.index),
+        metadata="config/samples.csv"
+    output:
+        "results/plots/peak_summary_plot.png"
+    params:
+        out_dir="results/plots"
+    envmodules:
+        config["R"],
+        config["bioconductor"]
+    log:
+        "results/logs/snakelogs/generate_peak_summary_plots.log"
+    shell:
+        """
+        Rscript scripts/plot_peakSummary.R "{input.peak_list}" "{input.frip_list}" {input.metadata} {params.out_dir}
+        """
+
