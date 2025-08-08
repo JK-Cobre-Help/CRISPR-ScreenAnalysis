@@ -51,6 +51,26 @@ def fq_dict_from_sample(wildcards):
     "fq2": samples_table.loc[wildcards.sample, "fastq2"]
   }
 
+# Get the flags from the config (defaut True if not specified)
+run_mageck_paired = config["mageck_paired"]
+run_mageck_single = config["mageck_single"]
+
+# Define paired end outputs
+mageck_paired = []
+if run_mageck_paired:
+    mageck_paired = [
+        "results/counts/sample1.count.txt",
+        "results/counts/sample1.countsummary.txt"
+    ]
+
+# Define single end outputs
+mageck_single = []
+if run_mageck_single:
+    mageck_single = [
+        "results/counts/sample1.count.txt",
+        "results/counts/sample1.countsummary.txt"
+    ]
+
 ##################################################################
 ##                          Rule All                            ##
 ##################################################################
@@ -59,8 +79,8 @@ rule all:
     input:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
         "results/qc/multiqc/multiqc_report.html",
-        "results/counts/sample1.count.txt",
-        "results/counts/sample1.countsummary.txt"
+        run_mageck_paired,
+        run_mageck_single
 
 ##################################################################
 ##                       Quality Control                        ##
