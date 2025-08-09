@@ -79,8 +79,8 @@ rule all:
     input:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
         "results/qc/multiqc/multiqc_report.html",
-        run_mageck_paired,
-        run_mageck_single
+        mageck_paired,
+        mageck_single
 
 ##################################################################
 ##                       Quality Control                        ##
