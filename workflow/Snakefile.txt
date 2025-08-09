@@ -135,8 +135,6 @@ rule multiqc_raw:
         "results/logs/multiqc/multiqc.log"
     shell:
         """
-        rm -rf {params.outdir}
-        mkdir -p {params.outdir}
         multiqc results/qc/fastqc -o {params.outdir} 2> {log}
         """
 
@@ -148,11 +146,11 @@ rule mageck_count_se:
     input:
         unpack(fq_dict_from_sample)
     output:
-        "results/counts/sample1.count.txt",
-        "results/counts/sample1.countsummary.txt"
+        "results/counts/{sample}.count.txt",
+        "results/counts/{sample}.countsummary.txt"
     params:
-        label="sample1",
-        outprefix="results/counts/sample1",
+        label={sample},
+        outprefix="results/counts/{sample}",
         library="config["sgRNA_library"]
     envmodules:
         config["mageck"]
