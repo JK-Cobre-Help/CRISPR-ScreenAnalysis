@@ -51,25 +51,19 @@ def fq_dict_from_sample(wildcards):
     "fq2": samples_table.loc[wildcards.sample, "fastq2"]
   }
 
-# Get the flags from the config (defaut True if not specified)
-run_mageck_paired = config["mageck_paired"]
-run_mageck_single = config["mageck_single"]
+# Set sample labels
+SAMPLE_LABELS = config["sample_labels"]
 
-# Define paired end outputs
-mageck_paired = []
-if run_mageck_paired:
-    mageck_paired = [
-        "results/counts/sample1.count.txt",
-        "results/counts/sample1.countsummary.txt"
-    ]
-
-# Define single end outputs
-mageck_single = []
-if run_mageck_single:
-    mageck_single = [
-        "results/counts/sample1.count.txt",
-        "results/counts/sample1.countsummary.txt"
-    ]
+# Set single end or paired end input
+def input_fastqs():
+    """
+    Return a list of actual FASTQ paths for Snakemake to track as inputs.
+    (We feed a *formatted* string to MAGeCK via params; but inputs should be a list.)
+    """
+    if run_mageck_paired:
+        return samples_table["fastq1"].tolist() + samples_table["fastq2"].tolist()
+    else:
+        return samples_table["fastq1"].tolist()
 
 ##################################################################
 ##                          Rule All                            ##
@@ -79,8 +73,9 @@ rule all:
     input:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
         "results/qc/multiqc/multiqc_report.html",
-        mageck_paired,
-        mageck_single
+        "results/counts/{sample}.count.txt",
+        "results/counts/{sample}.countsummary.txt"
+        
 
 ##################################################################
 ##                       Quality Control                        ##
@@ -139,17 +134,17 @@ rule multiqc_raw:
         """
 
 ##################################################################
-##                   Mageck Count (single end)                  ##
+##                         Mageck Count                         ##
 ##################################################################
 
 rule mageck_count_se:
     input:
-        unpack(fq_dict_from_sample)
+        input_fastqs
     output:
         "results/counts/{sample}.count.txt",
         "results/counts/{sample}.countsummary.txt"
     params:
-        label={sample},
+        label=SAMPLE_LABELS,
         outprefix="results/counts/{sample}",
         library="config["sgRNA_library"]
     envmodules:
@@ -161,35 +156,6 @@ rule mageck_count_se:
         mageck count \
           -l {params.library} \
           --fastq {input.fq1} \
-          --sample-label {params.label} \
-          -n {params.outprefix} \
-          2> {log}
-        """
-
-
-##################################################################
-##                   Mageck Count (paired end)                  ##
-##################################################################
-
-rule mageck_count_pe:
-    input:
-        unpack(fq_dict_from_sample)
-    output:
-        "results/counts/sample1.count.txt",
-        "results/counts/sample1.countsummary.txt"
-    params:
-        label="sample1",
-        outprefix="results/counts/sample1",
-        library="config["sgRNA_library"]
-    envmodules:
-        config["mageck"]
-    log:
-        "results/logs/counts/mageck_count.log"
-    shell:
-        """
-        mageck count \
-          -l {params.library} \
-          --fastq {input.fq1} {input.fq2} \
           --sample-label {params.label} \
           -n {params.outprefix} \
           2> {log}
