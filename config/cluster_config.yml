@@ -33,7 +33,7 @@ multiqc_raw:
 # Mageck
 # ------------------------------------------------------------------------------
 
-mageck_count_se:
+mageck_count:
   cpus-per-task: 16
   mem: 64G
   cores: 16
@@ -42,11 +42,3 @@ mageck_count_se:
   output: logs/{rule}.{wildcards.sample}.out
   error: logs/{rule}.{wildcards.sample}.err
 
-mageck_count_pe:
-  cpus-per-task: 16
-  mem: 64G
-  cores: 16
-  time: "08:00:00"
-  name: "{rule}.{wildcards.sample}"
-  output: logs/{rule}.{wildcards.sample}.out
-  error: logs/{rule}.{wildcards.sample}.err
