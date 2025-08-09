@@ -17,8 +17,8 @@ fastqc_raw:
   cores: 4
   time: "02:00:00"
   name: "{rule}.{wildcards.sample}"
-  output: logs/{rule}.{wildcards.sample}.out
-  error: logs/{rule}.{wildcards.sample}.err
+  output: results/logs/{rule}.{wildcards.sample}.out
+  error: results/logs/{rule}.{wildcards.sample}.err
 
 multiqc_raw:
   cpus-per-task: 4
@@ -26,8 +26,8 @@ multiqc_raw:
   cores: 4
   time: "02:00:00"
   name: "{rule}"
-  output: logs/{rule}.out
-  error: logs/{rule}.err
+  output: results/logs/{rule}.out
+  error: results/logs/{rule}.err
 
 # ------------------------------------------------------------------------------
 # Mageck
@@ -38,7 +38,7 @@ mageck_count:
   mem: 64G
   cores: 16
   time: "08:00:00"
-  name: "{rule}.{wildcards.sample}"
-  output: logs/{rule}.{wildcards.sample}.out
-  error: logs/{rule}.{wildcards.sample}.err
+  name: "{rule}"
+  output: results/logs/{rule}.out
+  error: results/logs/{rule}.err
 
