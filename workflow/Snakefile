@@ -150,7 +150,7 @@ rule mageck_count:
     input:
         input_fastqs()
     output:
-        count=f"{COUNTS_PREFIX}.count.txt",
+        txt=f"{COUNTS_PREFIX}.count.txt",
         summary=f"{COUNTS_PREFIX}.countsummary.txt"
     params:
         library=config["sgRNA_library"],
@@ -162,7 +162,7 @@ rule mageck_count:
         config["mageck"],
         config["apptainer"]
     log:
-        "results/logs/counts/mageckCount.log"
+        "results/logs/counts/mageck_count.log"
     shell:
         """
         # make sure directory is present
