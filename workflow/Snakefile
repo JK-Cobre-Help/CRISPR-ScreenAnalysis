@@ -39,6 +39,7 @@ configfile: "config/config.yml"
 ##                    Define input functions                    ##
 ##################################################################
 
+import os
 import pandas as pd
 
 # read the CSV file and set an index using the values in the "sample" column.
@@ -51,9 +52,11 @@ def fq_dict_from_sample(wildcards):
     "fq2": samples_table.loc[wildcards.sample, "fastq2"]
   }
 
-# Set sample labels and counts prefix
+# Set sample labels and counts prefix and attach the directory
 SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
-COUNTS_PREFIX = config["counts_prefix"]
+COUNTS_DIR = "results/counts"
+os.makedirs(COUNTS_DIR, exist_ok=True)
+COUNTS_PREFIX = os.path.join(COUNTS_DIR, config["counts_prefix"]) 
 
 # Set single end or paired end input for Mageck Count
 run_mageck_paired = config["mageck_paired"]
@@ -64,6 +67,13 @@ def input_fastqs():
     else:
         return samples_table["fastq1"].tolist()
 
+def mageck_fastq_arg():
+    if run_mageck_paired:
+        pairs = [f"{row.fastq1},{row.fastq2}" for _, row in samples_table.iterrows()]
+        return " ".join(pairs)
+    else:
+        return ",".join(samples_table["fastq1"].tolist())
+
 ##################################################################
 ##                          Rule All                            ##
 ##################################################################
@@ -72,8 +82,8 @@ rule all:
     input:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
         "results/qc/multiqc/multiqc_report.html",
-        'results/counts/f"{COUNTS_PREFIX}.count.txt"',
-        'results/counts/f"{COUNTS_PREFIX}.countsummary.txt"'
+        f"{COUNTS_PREFIX}.count.txt",
+        f"{COUNTS_PREFIX}.countsummary.txt"
         
 
 ##################################################################
@@ -136,26 +146,34 @@ rule multiqc_raw:
 ##                         Mageck Count                         ##
 ##################################################################
 
-rule mageck_count_se:
+rule mageck_count:
     input:
         input_fastqs()
     output:
-        count='results/counts/f"{COUNTS_PREFIX}.count.txt"',
-        summary='results/counts/f"{COUNTS_PREFIX}.countsummary.txt'
+        count=f"{COUNTS_PREFIX}.count.txt",
+        summary=f"{COUNTS_PREFIX}.countsummary.txt"
     params:
+        library=config["sgRNA_library"],
+        fastq_arg=lambda wc: mageck_fastq_arg(),
         label=SAMPLE_LABELS,
-        outprefix='results/counts/f"{COUNTS_PREFIX}"',
-        library=config["sgRNA_library"]
+        outprefix=COUNTS_PREFIX,
+        paired_flag="--paired-end" if run_mageck_paired else ""
     envmodules:
-        config["mageck"]
+        config["mageck"],
+        config["apptainer"]
     log:
         "results/logs/counts/mageck_count.log"
     shell:
         """
+        # make sure directory is present
+        mkdir -p $(dirname {params.outprefix})
+
+        # run mageck count
         mageck count \
           -l {params.library} \
-          --fastq {input} \
+          --fastq {params.fastq_arg} \
           --sample-label {params.label} \
+          {params.paired_flag} \
           -n {params.outprefix} \
           2> {log}
         """
