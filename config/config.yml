@@ -8,7 +8,7 @@ mageck_paired: false
 sgRNA_library: "resources/calabreseA_library.txt"
 
 # One counts file for all samples:
-counts_prefix: "results/counts/sample1"
+counts_prefix: "sample1"
 
 ## environment modules
 fastqc: "fastqc/0.12.1"
