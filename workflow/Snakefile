@@ -56,11 +56,9 @@ SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
 COUNTS_PREFIX = config["counts_prefix"]
 
 # Set single end or paired end input for Mageck Count
+run_mageck_paired = config["mageck_paired"]
+
 def input_fastqs():
-    """
-    Return a list of actual FASTQ paths for Snakemake to track as inputs.
-    (We feed a *formatted* string to MAGeCK via params; but inputs should be a list.)
-    """
     if run_mageck_paired:
         return samples_table["fastq1"].tolist() + samples_table["fastq2"].tolist()
     else:
