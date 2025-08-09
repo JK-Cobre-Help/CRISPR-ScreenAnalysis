@@ -165,16 +165,18 @@ rule mageck_count:
         "results/logs/counts/mageck_count.log"
     shell:
         """
-        # make sure directory is present
-        mkdir -p $(dirname {params.outprefix})
+        # make sure directory is present and check names
+        mkdir -p "$(dirname {params.outprefix})"
+        echo "FASTQ_ARG: {params.fastq_arg}" >&2
+        echo "LABELS   : {params.label}" >&2
 
         # run mageck count
         mageck count \
-          -l {params.library} \
-          --fastq {params.fastq_arg} \
-          --sample-label {params.label} \
+          -l "{params.library}" \
+          --fastq "{params.fastq_arg}" \
+          --sample-label "{params.label}" \
           {params.paired_flag} \
-          -n {params.outprefix} \
+          -n "{params.outprefix}" \
           2> {log}
         """
 
