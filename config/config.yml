@@ -3,7 +3,6 @@ samples_csv: "config/samples.csv"
 
 ## define mageck single end or paired end
 mageck_paired: false
-mageck_single: true
 
 ## sgRNA library
 sgRNA_library: "resources/calabreseA_library.txt"
