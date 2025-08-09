@@ -91,7 +91,7 @@ rule all:
 ##################################################################
 
 # run fastqc on fastq.gz files before trimming
-rule fastqc_reads:
+rule fastqc_raw:
     input:
         unpack(fq_dict_from_sample)
     output:
