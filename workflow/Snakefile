@@ -51,10 +51,11 @@ def fq_dict_from_sample(wildcards):
     "fq2": samples_table.loc[wildcards.sample, "fastq2"]
   }
 
-# Set sample labels
-SAMPLE_LABELS = config["sample_labels"]
+# Set sample labels and counts prefix
+SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
+COUNTS_PREFIX = config["counts_prefix"]
 
-# Set single end or paired end input
+# Set single end or paired end input for Mageck Count
 def input_fastqs():
     """
     Return a list of actual FASTQ paths for Snakemake to track as inputs.
@@ -73,8 +74,8 @@ rule all:
     input:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
         "results/qc/multiqc/multiqc_report.html",
-        "results/counts/{sample}.count.txt",
-        "results/counts/{sample}.countsummary.txt"
+        'results/counts/f"{COUNTS_PREFIX}.count.txt"',
+        'results/counts/f"{COUNTS_PREFIX}.countsummary.txt"'
         
 
 ##################################################################
@@ -139,14 +140,14 @@ rule multiqc_raw:
 
 rule mageck_count_se:
     input:
-        input_fastqs
+        input_fastqs()
     output:
-        "results/counts/{sample}.count.txt",
-        "results/counts/{sample}.countsummary.txt"
+        count='results/counts/f"{COUNTS_PREFIX}.count.txt"',
+        summary='results/counts/f"{COUNTS_PREFIX}.countsummary.txt'
     params:
         label=SAMPLE_LABELS,
-        outprefix="results/counts/{sample}",
-        library="config["sgRNA_library"]
+        outprefix='results/counts/f"{COUNTS_PREFIX}"',
+        library=config["sgRNA_library"]
     envmodules:
         config["mageck"]
     log:
