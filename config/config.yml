@@ -4,7 +4,7 @@ samples_csv: "config/samples.csv"
 ## define mageck single end or paired end
 mageck_paired: false
 
-## sgRNA library
+## path to sgRNA library
 sgRNA_library: "resources/calabreseA_library.txt"
 
 # One counts file for all samples:
