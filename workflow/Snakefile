@@ -162,7 +162,7 @@ rule mageck_count:
         config["mageck"],
         config["apptainer"]
     log:
-        "results/logs/counts/mageck_count.log"
+        "results/logs/counts/mageckCount.log"
     shell:
         """
         # make sure directory is present
