@@ -6,7 +6,7 @@ mageck_paired: false
 mageck_single: true
 
 ## sgRNA library
-sgRNA_library: "resources/calabrese_library.txt"
+sgRNA_library: "resources/calabreseA_library.txt"
 
 # One counts file for all samples:
 counts_prefix: "results/counts/sample1"
