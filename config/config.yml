@@ -5,6 +5,12 @@ samples_csv: "config/samples.csv"
 mageck_paired: false
 mageck_single: true
 
+## sgRNA library
+sgRNA_library: "resources/calabrese_library.txt"
+
+# One counts file for all samples:
+counts_prefix: "results/counts/sample1"
+
 ## environment modules
 fastqc: "fastqc/0.12.1"
 multiqc: "multiqc/1.21"
