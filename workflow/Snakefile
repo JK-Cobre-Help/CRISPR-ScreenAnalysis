@@ -72,7 +72,7 @@ def mageck_fastq_arg():
         pairs = [f"{row.fastq1},{row.fastq2}" for _, row in samples_table.iterrows()]
         return " ".join(pairs)
     else:
-        return ",".join(samples_table["fastq1"].tolist())
+        return " ".join(samples_table["fastq1"].tolist())
 
 ##################################################################
 ##                          Rule All                            ##
@@ -173,7 +173,7 @@ rule mageck_count:
         # run mageck count
         mageck count \
           -l "{params.library}" \
-          --fastq "{params.fastq_arg}" \
+          --fastq {params.fastq_arg} \
           --sample-label "{params.label}" \
           {params.paired_flag} \
           -n "{params.outprefix}" \
