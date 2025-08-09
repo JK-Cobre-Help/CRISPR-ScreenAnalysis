@@ -1,3 +1,11 @@
-sample,fastq1,fastq2,histone,replicate
-H3.3_A_trimmed,resources/trimmed_H3.3_A_S1_R1_001.fastq.gz,resources/trimmed_H3.3_A_S1_R2_001.fastq.gz,H3.3,A
-H3.3_B_trimmed,resources/trimmed_H3.3_B_S2_R1_001.fastq.gz,resources/trimmed_H3.3_B_S2_R2_001.fastq.gz,H3.3,B
+sample,fastq1,fastq2
+sample,fastq1,fastq2
+N1_D0,N1_D0_R1.fastq.gz,N1_D0_R2.fastq.gz
+N2_D0,N2_D0_R1.fastq.gz,N2_D0_R2.fastq.gz
+N3_D0,N3_D0_R1.fastq.gz,N3_D0_R2.fastq.gz
+N1_D14_DMSO,N1_D14_DMSO_R1.fastq.gz,N1_D14_DMSO_R2.fastq.gz
+N2_D14_DMSO,N2_D14_DMSO_R1.fastq.gz,N2_D14_DMSO_R2.fastq.gz
+N3_D14_DMSO,N3_D14_DMSO_R1.fastq.gz,N3_D14_DMSO_R2.fastq.gz
+N1_D14_PAC,N1_D14_PAC_R1.fastq.gz,N1_D14_PAC_R2.fastq.gz
+N2_D14_PAC,N2_D14_PAC_R1.fastq.gz,N2_D14_PAC_R2.fastq.gz
+N3_D14_PAC,N3_D14_PAC_R1.fastq.gz,N3_D14_PAC_R2.fastq.gz
