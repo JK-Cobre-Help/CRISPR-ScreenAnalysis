@@ -155,7 +155,7 @@ rule mageck_count_se:
         """
         mageck count \
           -l {params.library} \
-          --fastq {input.fq1} \
+          --fastq {input} \
           --sample-label {params.label} \
           -n {params.outprefix} \
           2> {log}
