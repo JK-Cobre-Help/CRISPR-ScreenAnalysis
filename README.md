@@ -3,7 +3,7 @@
 ## 9) Instructions to run on Slurm managed HPC
 9A. Download version controlled repository
 ```
-git clone 
+git clone https://github.com/KirklandLab/CRISPR-ScreenAnalysis.git
 ```
 9B. Load modules
 ```
