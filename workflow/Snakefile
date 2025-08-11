@@ -52,6 +52,10 @@ def fq_dict_from_sample(wildcards):
     "fq2": samples_table.loc[wildcards.sample, "fastq2"]
   }
 
+# Stage FASTQs
+STAGE = config["stage_fastqs"]
+STAGE_DIR = config["stage_dir"]
+
 # Set sample labels and counts prefix and attach the directory
 SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
 COUNTS_DIR = "results/counts"
