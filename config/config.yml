@@ -3,7 +3,6 @@ samples_csv: "config/samples.csv"
 
 ## stage fastq files (mageck count cannot read from /archive drive)
 stage_fastqs: true
-stage_dir: "results/staged_fastqs"
 
 ## define mageck single end or paired end
 mageck_paired: false
