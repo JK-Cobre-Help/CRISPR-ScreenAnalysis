@@ -312,7 +312,7 @@ if MLE_ENABLED:
         log:
             "results/logs/mageck_mle.log"
         shell:
-            r"""
+            """
             mkdir -p "$(dirname {params.prefix})"
             EXTRA=""
             if [ -n "{params.ctrl}" ]; then
@@ -323,6 +323,6 @@ if MLE_ENABLED:
               -k "{input.counts}" \
               -d "{input.design}" \
               -n "{params.prefix}" \
-              ${EXTRA} \
+              $EXTRA \
               2> {log}
             """
