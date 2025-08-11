@@ -92,22 +92,13 @@ def mageck_input_files():
     else:
         return [fq1_used(s) for s in samples_table.index]
 
-def mageck_fastq_arg():
-    """
-    Exact --fastq string for MAGeCK:
-      - SE: space-separated R1 files
-      - PE: space-separated "R1,R2" pairs
-    Uses staged paths when STAGE=True.
-    """
-    parts = []
-    for s in samples_table.index:
-        r1 = fq1_used(s)
-        if run_mageck_paired:
-            r2 = fq2_used(s)
-            parts.append(f"{r1},{r2}")
-        else:
-            parts.append(r1)
-    return " ".join(parts)
+def mageck_fastq_arg_r1():
+    """Space-separated list of R1 files for --fastq."""
+    return " ".join(fq1_used(s) for s in samples_table.index)
+
+def mageck_fastq_arg_r2():
+    """Space-separated list of R2 files for --fastq-2."""
+    return " ".join(fq2_used(s) for s in samples_table.index)
 
 ##################################################################
 ##                          Rule All                            ##
@@ -209,9 +200,7 @@ rule mageck_count:
     params:
         library=config["sgRNA_library"],
         labels=SAMPLE_LABELS,
-        # For SE we reuse existing mageck_fastq_arg() (R1-only, space-separated)
-        fastq1=(lambda wc: mageck_fastq_arg() if not run_mageck_paired else mageck_fastq_arg_r1()),
-        # Build the entire PE extra string or empty for SE
+        fastq1=(lambda wc: mageck_fastq_arg_r1()),
         fastq2=(lambda wc: f"--fastq-2 {mageck_fastq_arg_r2()}" if run_mageck_paired else ""),
         outprefix=COUNTS_PREFIX
     envmodules:
