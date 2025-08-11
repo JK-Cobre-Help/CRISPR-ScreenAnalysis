@@ -100,6 +100,15 @@ def mageck_fastq_arg_r2():
     """Space-separated list of R2 files for --fastq-2."""
     return " ".join(fq2_used(s) for s in samples_table.index)
 
+# MLE Design
+MLE_ENABLED = config["mle_enabled"]
+CUSTOM_DESIGN = config["custom_design_matrix"].strip()
+MLE_PREFIX = config["mle_prefix"]
+MLE_CTRL = config["mle_control_sgrna"].strip()
+
+# Where the design matrix will come from
+DESIGN_TXT = CUSTOM_DESIGN if CUSTOM_DESIGN else "results/mle/design_matrix.txt"
+
 ##################################################################
 ##                          Rule All                            ##
 ##################################################################
@@ -109,7 +118,8 @@ rule all:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
         "results/qc/multiqc/multiqc_report.html",
         f"{COUNTS_PREFIX}.count.txt",
-        f"{COUNTS_PREFIX}.countsummary.txt"
+        f"{COUNTS_PREFIX}.countsummary.txt",
+        *([f"{MLE_PREFIX}.gene_summary.txt"] if MLE_ENABLED else [])
         
 
 ##################################################################
@@ -228,93 +238,91 @@ rule mageck_count:
         """
 
 ##################################################################
-##                    Build Design Matrix (MLE)                 ##
+##                    Build Design Matrix (auto)                ##
 ##################################################################
 
-rule build_design_matrix:
-    input:
-        config["samples_csv"]
-    output:
-        design = "results/mle/design_matrix.txt"
-    params:
-        include_col = "include_mle",   # change here if you prefer another name
-        baseline    = "baseline"
-    log:
-        "results/logs/mageck_mle_design.log"
-    run:
-        # pandas and os are already imported at top; no need to re-import
-        os.makedirs("results/mle", exist_ok=True)
+if MLE_ENABLED and not CUSTOM_DESIGN:
+    rule build_design_matrix:
+        input:
+            config["samples_csv"]
+        output:
+            design = DESIGN_TXT
+        log:
+            "results/logs/mageck_mle_design.log"
+        run:
+            import pandas as _pd, os, numpy as _np
+            os.makedirs(os.path.dirname(output.design), exist_ok=True)
 
-        df = pd.read_csv(input[0])
+            # load fresh (don’t rely on global df mutations)
+            df = _pd.read_csv(input[0])
 
-        # sanity checks
-        for required in ["sample", params.include_col]:
-            if required not in df.columns:
-                raise ValueError(f"Missing column '{required}' in samples.csv")
+            # required columns
+            for col in ["sample", "fastq1", "fastq2", "include_mle", "factor"]:
+                if col not in df.columns:
+                    raise ValueError(f"Missing column '{col}' in samples.csv")
 
-        # auto-detect factor columns: everything not in core columns
-        core = {"sample", "fastq1", "fastq2", params.include_col}
-        factor_cols = [c for c in df.columns if c not in core]
-        if not factor_cols:
-            raise ValueError("No factor columns found in samples.csv (need 0/1 columns for each factor).")
+            # normalize include_mle to boolean
+            df["include_mle"] = df["include_mle"].astype(str).str.lower().isin(["true","1","t","yes","y"])
 
-        # robust include parsing: accept 1/0, true/false, yes/no, y/n (case-insensitive)
-        incl = df[params.include_col].astype(str).str.strip().str.lower()
-        df = df[incl.isin({"1","true","t","yes","y"})]
+            # keep only included rows
+            df = df[df["include_mle"]].copy()
 
-        # enforce order consistent with labels / counts
-        order = list(samples_table.index)
-        df = df.set_index("sample").loc[[s for s in order if s in df.index]].reset_index()
+            # enforce order consistent with labels (samples_table.index)
+            wanted = [s for s in samples_table.index if s in set(df["sample"])]
+            df = df.set_index("sample").loc[wanted].reset_index()
 
-        # coerce factors to int 0/1
-        for f in factor_cols:
-            df[f] = pd.to_numeric(df[f], errors="coerce").fillna(0).astype(int)
+            # factor normalization
+            def _norm_factor(x):
+                x = str(x).strip()
+                return "none" if x.lower() in ["none","", "na","nan","null"] else x
+            df["factor"] = df["factor"].map(_norm_factor)
 
-        # confirm all groups exist in counts labels
-        label_set = set(samples_table.index)
-        missing_in_counts = [s for s in df["sample"] if s not in label_set]
-        if missing_in_counts:
-            raise ValueError(f"Samples in design not present in counts labels: {missing_in_counts}")
+            # design = group + baseline + one-hot factors (excluding "none")
+            mat = _pd.DataFrame({"group": df["sample"], "baseline": 1})
 
-        # build matrix: group + baseline + factors
-        mat = pd.DataFrame({"group": df["sample"]})
-        mat[params.baseline] = 1
-        for f in factor_cols:
-            mat[f] = df[f]
+            # collect unique factor values (excluding "none"), keep order of first appearance
+            seen = []
+            for v in df["factor"]:
+                if v != "none" and v not in seen:
+                    seen.append(v)
 
-        mat.to_csv(output.design, sep="\t", index=False)
+            for v in seen:
+                mat[v] = (df["factor"] == v).astype(int)
+
+            # write tsv
+            mat.to_csv(output.design, sep="\t", index=False)
 
 ##################################################################
 ##                           MAGeCK MLE                         ##
 ##################################################################
 
-rule mageck_mle:
-    input:
-        counts = f"{COUNTS_PREFIX}.count.txt",
-        design = rules.build_design_matrix.output.design  # ensures dependency
-    output:
-        gene_summary = f"{config.get('mle_prefix','results/mle/mle')}.gene_summary.txt"
-    params:
-        prefix  = config.get("mle_prefix", "results/mle/mle"),
-        ctrl    = config.get("mle_control_sgrna", "").strip(),
-        threads = 4
-    envmodules:
-        config["mageck"]
-    log:
-        "results/logs/mageck_mle.log"
-    shell:
-        r"""
-        mkdir -p "$(dirname "{params.prefix}")"
-        EXTRA_CTRL=""
-        if [ -n "{params.ctrl}" ]; then
-          EXTRA_CTRL="--control-sgrna {params.ctrl}"
-        fi
+if MLE_ENABLED:
+    rule mageck_mle:
+        input:
+            counts = f"{COUNTS_PREFIX}.count.txt",
+            design = DESIGN_TXT
+        output:
+            gene_summary = f"{MLE_PREFIX}.gene_summary.txt"
+        params:
+            prefix = MLE_PREFIX,
+            ctrl = MLE_CTRL
+        envmodules:
+            config["mageck"],
+            config["apptainer"]
+        log:
+            "results/logs/mageck_mle.log"
+        shell:
+            r"""
+            mkdir -p "$(dirname "{params.prefix}")"
+            EXTRA=""
+            if [ -n "{params.ctrl}" ]; then
+              EXTRA="--control-sgrna {params.ctrl}"
+            fi
 
-        mageck mle \
-          -k "{input.counts}" \
-          -d "{input.design}" \
-          --threads {params.threads} \
-          -n "{params.prefix}" \
-          ${EXTRA_CTRL} \
-          2> {log}
-        """
+            mageck mle \
+              -k "{input.counts}" \
+              -d "{input.design}" \
+              -n "{params.prefix}" \
+              ${EXTRA} \
+              2> {log}
+            """
