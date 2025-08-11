@@ -54,7 +54,20 @@ def fq_dict_from_sample(wildcards):
 
 # Stage FASTQs
 STAGE = config["stage_fastqs"]
-STAGE_DIR = config["stage_dir"]
+STAGE_DIR = "results/staged_fastqs"
+os.makedirs(STAGE_DIR, exist_ok=True)
+
+def staged_name(path):
+    # keep just the basename when staging
+    return os.path.join(STAGE_DIR, os.path.basename(path))
+
+# Build a small table of staged targets
+samples_table["staged_fq1"] = samples_table["fastq1"].apply(staged_name)
+samples_table["staged_fq2"] = samples_table["fastq2"].apply(staged_name)
+
+# Use staged paths when STAGE is true
+def get_fq1(wc): return samples_table.loc[wc.sample, "staged_fq1" if STAGE else "fastq1"]
+def get_fq2(wc): return samples_table.loc[wc.sample, "staged_fq2" if STAGE else "fastq2"]
 
 # Set sample labels and counts prefix and attach the directory
 SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
@@ -144,6 +157,24 @@ rule multiqc_raw:
     shell:
         """
         multiqc results/qc/fastqc -o {params.outdir} 2> {log}
+        """
+
+##################################################################
+##                         Stage FASTQs                         ##
+##################################################################
+
+rule stage_fastqs:
+    input:
+        fq1=lambda wc: samples_table.loc[wc.sample, "fastq1"],
+        fq2=lambda wc: samples_table.loc[wc.sample, "fastq2"]
+    output:
+        fq1=lambda wc: samples_table.loc[wc.sample, "staged_fq1"],
+        fq2=lambda wc: samples_table.loc[wc.sample, "staged_fq2"]
+    shell:
+        r"""
+        mkdir -p {STAGE_DIR}
+        ln -sf {input.fq1} {output.fq1}
+        ln -sf {input.fq2} {output.fq2}
         """
 
 ##################################################################
