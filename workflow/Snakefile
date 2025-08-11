@@ -247,6 +247,9 @@ if MLE_ENABLED and not CUSTOM_DESIGN:
             config["samples_csv"]
         output:
             design = DESIGN_TXT
+        envmodules:
+            config["mageck"],
+            config["apptainer"]
         log:
             "results/logs/mageck_mle_design.log"
         run:
@@ -313,7 +316,7 @@ if MLE_ENABLED:
             "results/logs/mageck_mle.log"
         shell:
             r"""
-            mkdir -p "$(dirname "{params.prefix}")"
+            mkdir -p "$(dirname {params.prefix})"
             EXTRA=""
             if [ -n "{params.ctrl}" ]; then
               EXTRA="--control-sgrna {params.ctrl}"
