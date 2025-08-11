@@ -172,20 +172,21 @@ rule multiqc_raw:
 ##                         Stage FASTQs                         ##
 ##################################################################
 
-rule stage_fastqs:
-    input:
-        unpack(fq_dict_from_sample)
-    output:
-        temporary_fq1=temp("results/staged_fastqs/{sample}_R1_staged.fastq.gz"),
-        temporary_fq2=temp("results/staged_fastqs/{sample}_R2_staged.fastq.gz")
-    log:
-      "results/logs/staged_{sample}.log"
-    shell:
-        """
-        mkdir -p results/staged_fastqs
-        cp -f {input.fq1} {output.temporary_fq1}
-        cp -f {input.fq2} {output.temporary_fq2}
-        """
+if STAGE:
+    rule stage_fastqs:
+        input:
+            unpack(fq_dict_from_sample)
+        output:
+            temporary_fq1=temp("results/staged_fastqs/{sample}_R1_staged.fastq.gz"),
+            temporary_fq2=temp("results/staged_fastqs/{sample}_R2_staged.fastq.gz")
+        log:
+            "results/logs/staged_{sample}.log"
+        shell:
+            """
+            mkdir -p results/staged_fastqs
+            cp -f {input.fq1} {output.temporary_fq1}
+            cp -f {input.fq2} {output.temporary_fq2}
+            """
 
 ##################################################################
 ##                         Mageck Count                         ##
