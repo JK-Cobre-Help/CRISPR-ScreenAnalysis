@@ -13,7 +13,7 @@ __default__:
 
 fastqc_raw:
   cpus-per-task: 4
-  mem: 16G
+  mem: 8G
   cores: 4
   time: "02:00:00"
   name: "{rule}.{wildcards.sample}"
@@ -22,7 +22,7 @@ fastqc_raw:
 
 multiqc_raw:
   cpus-per-task: 4
-  mem: 32G
+  mem: 16G
   cores: 4
   time: "02:00:00"
   name: "{rule}"
