@@ -213,7 +213,7 @@ rule mageck_count:
         # make sure directory is present and check names
         mkdir -p "$(dirname {params.outprefix})"
         echo "SingleEnd_Input: {params.fastq1}" >&2
-        echo "PariedEnd_Input: {params.fastq2}" >&2
+        echo "PairedEnd_Input: {params.fastq2}" >&2
         echo "Sample_Labels: {params.labels}" >&2
 
         # run mageck count
@@ -221,7 +221,7 @@ rule mageck_count:
           -l "{params.library}" \
           --fastq {params.fastq1} \
           {params.fastq2} \
-          --sample-label "{params.label}" \
+          --sample-label "{params.labels}" \
           -n "{params.outprefix}" \
           2> {log}
         """
