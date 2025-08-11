@@ -62,31 +62,34 @@ Matrix is saved as:
 
 ### Example1 — Endpoint vs baseline
 
-**CSV**
+**Example `samples.csv`**
 
-```csv
-sample,fastq1,fastq2,include_mle,factor
-N1_D0,...,TRUE,none
-N2_D0,...,TRUE,none
-N3_D0,...,TRUE,none
-N1_D14_DMSO,...,TRUE,D14_DMSO
-N2_D14_DMSO,...,TRUE,D14_DMSO
-N3_D14_DMSO,...,TRUE,D14_DMSO
-N1_D14_PAC,...,TRUE,D14_PAC
-N2_D14_PAC,...,TRUE,D14_PAC
-N3_D14_PAC,...,TRUE,D14_PAC
-```
+| sample         | fastq1   | fastq2   | include_mle | factor     |
+|----------------|----------|----------|-------------|------------|
+| N1_D0          | ...      | ...      | TRUE        | none       |
+| N2_D0          | ...      | ...      | TRUE        | none       |
+| N3_D0          | ...      | ...      | TRUE        | none       |
+| N1_D14_DMSO    | ...      | ...      | TRUE        | D14_DMSO   |
+| N2_D14_DMSO    | ...      | ...      | TRUE        | D14_DMSO   |
+| N3_D14_DMSO    | ...      | ...      | TRUE        | D14_DMSO   |
+| N1_D14_PAC     | ...      | ...      | TRUE        | D14_PAC    |
+| N2_D14_PAC     | ...      | ...      | TRUE        | D14_PAC    |
+| N3_D14_PAC     | ...      | ...      | TRUE        | D14_PAC    |
 
-group         baseline  D14_DMSO  D14_PAC
-N1_D0                1         0        0
-N2_D0                1         0        0
-N3_D0                1         0        0
-N1_D14_DMSO          1         1        0
-N2_D14_DMSO          1         1        0
-N3_D14_DMSO          1         1        0
-N1_D14_PAC           1         0        1
-N2_D14_PAC           1         0        1
-N3_D14_PAC           1         0        1
+
+**Auto-generated design matrix**
+
+| group          | baseline | D14_DMSO | D14_PAC |
+|----------------|----------|----------|---------|
+| N1_D0          | 1        | 0        | 0       |
+| N2_D0          | 1        | 0        | 0       |
+| N3_D0          | 1        | 0        | 0       |
+| N1_D14_DMSO    | 1        | 1        | 0       |
+| N2_D14_DMSO    | 1        | 1        | 0       |
+| N3_D14_DMSO    | 1        | 1        | 0       |
+| N1_D14_PAC     | 1        | 0        | 1       |
+| N2_D14_PAC     | 1        | 0        | 1       |
+| N3_D14_PAC     | 1        | 0        | 1       |
 
 
 ### Best practices
