@@ -57,17 +57,8 @@ STAGE = config["stage_fastqs"]
 STAGE_DIR = "results/staged_fastqs"
 os.makedirs(STAGE_DIR, exist_ok=True)
 
-def staged_name(path):
-    # keep just the basename when staging
-    return os.path.join(STAGE_DIR, os.path.basename(path))
-
-# Build a small table of staged targets
-samples_table["staged_fq1"] = samples_table["fastq1"].apply(staged_name)
-samples_table["staged_fq2"] = samples_table["fastq2"].apply(staged_name)
-
-# Use staged paths when STAGE is true
-def get_fq1(wc): return samples_table.loc[wc.sample, "staged_fq1" if STAGE else "fastq1"]
-def get_fq2(wc): return samples_table.loc[wc.sample, "staged_fq2" if STAGE else "fastq2"]
+# Set single end or paired end input for Mageck Count
+run_mageck_paired = config["mageck_paired"]
 
 # Set sample labels and counts prefix and attach the directory
 SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
@@ -75,21 +66,48 @@ COUNTS_DIR = "results/counts"
 os.makedirs(COUNTS_DIR, exist_ok=True)
 COUNTS_PREFIX = os.path.join(COUNTS_DIR, config["counts_prefix"]) 
 
-# Set single end or paired end input for Mageck Count
-run_mageck_paired = config["mageck_paired"]
+# functions to lookup file paths
+def staged_name(sample, read):  # read: "R1" or "R2"
+    return os.path.join(STAGE_DIR, f"{sample}_{read}_staged.fastq.gz")
 
-def input_fastqs():
+def fq1_src(sample): return samples_table.loc[sample, "fastq1"]
+def fq2_src(sample): return samples_table.loc[sample, "fastq2"]
+
+def fq1_used(sample):
+    """Path MAGeCK should read for R1 (staged if STAGE=True)."""
+    return staged_name(sample, "R1") if STAGE else fq1_src(sample)
+
+def fq2_used(sample):
+    """Path MAGeCK should read for R2 (staged if STAGE=True)."""
+    return staged_name(sample, "R2") if STAGE else fq2_src(sample)
+
+def mageck_input_files():
+    """
+    Concrete list of files that mageck_count depends on.
+    Ensures staging runs first when STAGE=True.
+    """
     if run_mageck_paired:
-        return samples_table["fastq1"].tolist() + samples_table["fastq2"].tolist()
+        return [fq1_used(s) for s in samples_table.index] + \
+               [fq2_used(s) for s in samples_table.index]
     else:
-        return samples_table["fastq1"].tolist()
+        return [fq1_used(s) for s in samples_table.index]
 
 def mageck_fastq_arg():
-    if run_mageck_paired:
-        pairs = [f"{row.fastq1},{row.fastq2}" for _, row in samples_table.iterrows()]
-        return " ".join(pairs)
-    else:
-        return " ".join(samples_table["fastq1"].tolist())
+    """
+    Exact --fastq string for MAGeCK:
+      - SE: space-separated R1 files
+      - PE: space-separated "R1,R2" pairs
+    Uses staged paths when STAGE=True.
+    """
+    parts = []
+    for s in samples_table.index:
+        r1 = fq1_used(s)
+        if run_mageck_paired:
+            r2 = fq2_used(s)
+            parts.append(f"{r1},{r2}")
+        else:
+            parts.append(r1)
+    return " ".join(parts)
 
 ##################################################################
 ##                          Rule All                            ##
@@ -118,7 +136,7 @@ rule fastqc_raw:
         zip2="results/qc/fastqc/{sample}_R2_fastqc.zip"
     envmodules:
         config["fastqc"]
-    log: "results/logs/snakelogs/fastqc_reads.{sample}.log"
+    log: "results/logs/fastqc_{sample}.log"
     shell:
         """
         # Run FastQC with output directed to writable folder
@@ -153,7 +171,7 @@ rule multiqc_raw:
     envmodules:
         config["multiqc"]
     log:
-        "results/logs/multiqc/multiqc.log"
+        "results/logs/multiqc.log"
     shell:
         """
         multiqc results/qc/fastqc -o {params.outdir} 2> {log}
@@ -165,16 +183,17 @@ rule multiqc_raw:
 
 rule stage_fastqs:
     input:
-        fq1=lambda wc: samples_table.loc[wc.sample, "fastq1"],
-        fq2=lambda wc: samples_table.loc[wc.sample, "fastq2"]
+        unpack(fq_dict_from_sample)
     output:
-        fq1=lambda wc: samples_table.loc[wc.sample, "staged_fq1"],
-        fq2=lambda wc: samples_table.loc[wc.sample, "staged_fq2"]
+        temporary_fq1=temp("results/staged_fastqs/{sample}_R1_staged.fastq.gz"),
+        temporary_fq2=temp("results/staged_fastqs/{sample}_R2_staged.fastq.gz")
+    log:
+      "results/logs/staged_{sample}.log"
     shell:
-        r"""
-        mkdir -p {STAGE_DIR}
-        ln -sf {input.fq1} {output.fq1}
-        ln -sf {input.fq2} {output.fq2}
+        """
+        mkdir -p results/staged_fastqs
+        cp -f {input.fq1} {output.temporary_fq1}
+        cp -f {input.fq2} {output.temporary_fq2}
         """
 
 ##################################################################
@@ -183,7 +202,7 @@ rule stage_fastqs:
 
 rule mageck_count:
     input:
-        input_fastqs()
+        mageck_input_files()
     output:
         txt=f"{COUNTS_PREFIX}.count.txt",
         summary=f"{COUNTS_PREFIX}.countsummary.txt"
