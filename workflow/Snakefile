@@ -247,9 +247,6 @@ if MLE_ENABLED and not CUSTOM_DESIGN:
             config["samples_csv"]
         output:
             design = DESIGN_TXT
-        envmodules:
-            config["mageck"],
-            config["apptainer"]
         log:
             "results/logs/mageck_mle_design.log"
         run:
