@@ -43,7 +43,7 @@ stage_fastqs:
   error: results/logs/{rule}.{wildcards.sample}.err
 
 # ------------------------------------------------------------------------------
-# Mageck
+# Mageck Count
 # ------------------------------------------------------------------------------
 
 mageck_count:
@@ -55,3 +55,28 @@ mageck_count:
   output: results/logs/{rule}.out
   error: results/logs/{rule}.err
 
+# ------------------------------------------------------------------------------
+# Build Design Matrix
+# ------------------------------------------------------------------------------
+
+build_design_matrix:
+  cpus-per-task: 1
+  mem: 1G
+  cores: 16
+  time: "00:30:00"
+  name: "{rule}"
+  output: results/logs/{rule}.out
+  error: results/logs/{rule}.err
+
+# ------------------------------------------------------------------------------
+# Mageck MLE
+# ------------------------------------------------------------------------------
+
+mageck_mle:
+  cpus-per-task: 16
+  mem: 64G
+  cores: 16
+  time: "08:00:00"
+  name: "{rule}"
+  output: results/logs/{rule}.out
+  error: results/logs/{rule}.err
