@@ -208,28 +208,31 @@ rule mageck_count:
         summary=f"{COUNTS_PREFIX}.countsummary.txt"
     params:
         library=config["sgRNA_library"],
-        fastq_arg=lambda wc: mageck_fastq_arg(),
-        label=SAMPLE_LABELS,
-        outprefix=COUNTS_PREFIX,
-        paired_flag="--paired-end" if run_mageck_paired else ""
+        labels=SAMPLE_LABELS,
+        # For SE we reuse existing mageck_fastq_arg() (R1-only, space-separated)
+        fastq1=(lambda wc: mageck_fastq_arg() if not run_mageck_paired else mageck_fastq_arg_r1()),
+        # Build the entire PE extra string or empty for SE
+        fastq2=(lambda wc: f"--fastq-2 {mageck_fastq_arg_r2()}" if run_mageck_paired else ""),
+        outprefix=COUNTS_PREFIX
     envmodules:
         config["mageck"],
         config["apptainer"]
     log:
-        "results/logs/counts/mageck_count.log"
+        "results/logs/mageck_count.log"
     shell:
         """
         # make sure directory is present and check names
         mkdir -p "$(dirname {params.outprefix})"
-        echo "FASTQ_ARG: {params.fastq_arg}" >&2
-        echo "LABELS   : {params.label}" >&2
+        echo "FASTQ    : {params.fastq}" >&2
+        echo "PE_EXTRA : {params.pe_extra}" >&2
+        echo "LABELS   : {params.labels}" >&2
 
         # run mageck count
         mageck count \
           -l "{params.library}" \
-          --fastq {params.fastq_arg} \
+          --fastq {params.fastq1} \
+          {params.fastq2} \
           --sample-label "{params.label}" \
-          {params.paired_flag} \
           -n "{params.outprefix}" \
           2> {log}
         """
