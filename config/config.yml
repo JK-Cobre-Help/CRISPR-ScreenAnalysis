@@ -10,8 +10,13 @@ mageck_paired: false
 ## path to sgRNA library
 sgRNA_library: "resources/calabreseA_library.txt"
 
-# One counts file for all samples:
+## One counts file for all samples:
 counts_prefix: "sample1"
+
+## Mageck MLE Settings
+mle_enabled: true
+mle_prefix: "results/mle/CalabreseA"
+mle_control_sgrna: ""  # optional; leave blank for none
 
 ## environment modules
 fastqc: "fastqc/0.12.1"
