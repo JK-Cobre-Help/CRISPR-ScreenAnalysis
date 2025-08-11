@@ -17,6 +17,7 @@ counts_prefix: "sample1"
 mle_enabled: true
 mle_prefix: "results/mle/CalabreseA"
 mle_control_sgrna: ""  # optional; leave blank for none
+custom_design_matrix: ""   # e.g. "resources/my_design.txt" to bypass auto-build
 
 ## environment modules
 fastqc: "fastqc/0.12.1"
