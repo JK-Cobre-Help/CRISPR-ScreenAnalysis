@@ -131,6 +131,11 @@ MLE_CTRL = config["mle_control_sgrna"].strip()
 # If not provided write an auto-built design matrix inside results/mle/
 DESIGN_TXT = CUSTOM_DESIGN if CUSTOM_DESIGN else os.path.join(MLE_DIR, "design_matrix.txt")
 
+# MAGeCK Flute and Output Directory Defined
+OUT_DIR   = "results/plots"
+PROJ_NAME = config["proj_name"]
+FLUTE_DIR = f"{OUT_DIR}/MAGeCKFlute_{PROJ_NAME}"
+
 ##################################################################
 ##                          Rule All                            ##
 ##################################################################
@@ -361,10 +366,6 @@ if MLE_ENABLED:
 ##################################################################
 ##                  Gene & Count Summary Plots                  ##
 ##################################################################
-
-OUT_DIR   = "results/plots"
-PROJ_NAME = config["proj_name"]
-FLUTE_DIR = f"{OUT_DIR}/MAGeCKFlute_{PROJ_NAME}"
 
 if MLE_ENABLED:
     rule gene_count_summary_plots:
