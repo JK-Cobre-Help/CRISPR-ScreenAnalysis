@@ -52,6 +52,9 @@ treatname <- cols[length(cols)]
 # -------------------------
 # Run MAGeCK Flute MLE
 # -------------------------
+oldwd <- getwd()
+setwd(output_dir)
+
 FluteMLE(
   replicates,
   treatname = treatname,
@@ -61,6 +64,7 @@ FluteMLE(
   norm_method = norm_method
 )
 
+setwd(oldwd)
 # -------------------------
 # Generate Custom Plots
 # -------------------------
