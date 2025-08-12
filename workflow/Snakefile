@@ -235,7 +235,7 @@ rule mageck_count:
     envmodules:
         config["mageck"],
         config["apptainer"]
-    threads: 2
+    threads: 16
     log:
         "results/logs/mageck_count.log"
     shell:
@@ -266,7 +266,7 @@ if MLE_ENABLED and not CUSTOM_DESIGN:
             config["samples_csv"]
         output:
             design = DESIGN_TXT
-        threads: 2
+        threads: 1
         log:
             "results/logs/mageck_mle_design.log"
         run:
@@ -329,7 +329,7 @@ if MLE_ENABLED:
         envmodules:
             config["mageck"],
             config["apptainer"]
-        threads: 2
+        threads: 16
         log:
             "results/logs/mageck_mle.log"
         shell:
