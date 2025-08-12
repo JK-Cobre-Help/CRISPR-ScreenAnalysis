@@ -13,11 +13,16 @@ sgRNA_library: "resources/calabreseA_library.txt"
 ## One counts file for all samples:
 counts_prefix: "sample1"
 
-## Mageck MLE Settings
+## MAGeCK MLE Settings
 mle_enabled: true
 mle_prefix: "CalabreseA"
-mle_control_sgrna: ""  # optional; leave blank for none
+mle_control_sgrna: ""      # optional; leave blank for none
 custom_design_matrix: ""   # e.g. "resources/my_design.txt" to bypass auto-build
+
+## MAGeCK Flute Settings
+proj_name: "CalabreseA"
+organism: "hsa"            # can also 
+norm_method: "none"        # optional; can be "cc" or "loess"
 
 ## environment modules
 fastqc: "fastqc/0.12.1"
