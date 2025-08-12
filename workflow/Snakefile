@@ -368,7 +368,7 @@ if MLE_ENABLED:
             count_summary = f"{COUNTS_PREFIX}.countsummary.txt",
             design = DESIGN_TXT
         output:
-            hist_plot = "results/plots/peak_summary_plot.png"
+            mageckFlute = "results/plots/MAGeCKFlute_2025July24_CalabreseA"
         params:
             out_dir = "results/mle"
         envmodules:
