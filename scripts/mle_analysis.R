@@ -49,9 +49,6 @@ if (length(cols) < 2) {
 ctrlname <- cols[1]
 treatname <- cols[length(cols)]
 
-# Project name defaults to the directory name
-proj <- basename(normalizePath(output_dir, mustWork = FALSE))
-
 # -------------------------
 # Run MAGeCK Flute MLE
 # -------------------------
@@ -112,7 +109,7 @@ p_cc <- DensityView(gdata_cc, samples=c(ctrlname, treatname))
 p_loess <- DensityView(gdata_loe, samples=c(ctrlname, treatname))
 
 # plot them side by side
-norm_grid <- cowplot::plot_grid(p_raw, p_cc, p_loe, labels = c("NonNormalized", "CellCycle", "Loess"), nrow = 1)
+norm_grid <- cowplot::plot_grid(p_raw, p_cc, p_loess, labels = c("NonNormalized", "CellCycle", "Loess"), nrow = 1)
 out_norm_png <- file.path(output_dir, sprintf("beta_norm_%s_vs_%s.png", treatname, ctrlname))
-ggsave(out_norm_png, plot = dens_grid, width = 15, height = 5, dpi = 150)
+ggsave(out_norm_png, plot = norm_grid, width = 15, height = 5, dpi = 150)
 
