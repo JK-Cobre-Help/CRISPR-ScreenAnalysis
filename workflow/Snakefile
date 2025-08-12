@@ -152,6 +152,7 @@ rule fastqc_raw:
         zip2="results/qc/fastqc/{sample}_R2_fastqc.zip"
     envmodules:
         config["fastqc"]
+    threads: 4
     log: "results/logs/fastqc_{sample}.log"
     shell:
         """
@@ -186,6 +187,7 @@ rule multiqc_raw:
         outdir="results/qc/multiqc"
     envmodules:
         config["multiqc"]
+    threads: 2
     log:
         "results/logs/multiqc.log"
     shell:
@@ -204,6 +206,7 @@ if STAGE:
         output:
             temporary_fq1=temp("results/staged_fastqs/{sample}_R1_staged.fastq.gz"),
             temporary_fq2=temp("results/staged_fastqs/{sample}_R2_staged.fastq.gz")
+        threads: 2
         log:
             "results/logs/staged_{sample}.log"
         shell:
@@ -232,6 +235,7 @@ rule mageck_count:
     envmodules:
         config["mageck"],
         config["apptainer"]
+    threads: 2
     log:
         "results/logs/mageck_count.log"
     shell:
@@ -262,6 +266,7 @@ if MLE_ENABLED and not CUSTOM_DESIGN:
             config["samples_csv"]
         output:
             design = DESIGN_TXT
+        threads: 2
         log:
             "results/logs/mageck_mle_design.log"
         run:
@@ -324,6 +329,7 @@ if MLE_ENABLED:
         envmodules:
             config["mageck"],
             config["apptainer"]
+        threads: 2
         log:
             "results/logs/mageck_mle.log"
         shell:
@@ -359,6 +365,7 @@ if MLE_ENABLED:
         envmodules:
             config["R"],
             config["bioconductor"]
+        threads: 2
         log:
             "results/logs/gene_count_summary_plots.log"
         shell:
