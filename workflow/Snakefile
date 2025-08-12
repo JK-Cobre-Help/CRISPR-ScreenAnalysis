@@ -102,12 +102,23 @@ def mageck_fastq_arg_r2():
 
 # MLE Design
 MLE_ENABLED = config["mle_enabled"]
+
+# Combine the name provided in config.yml with the file path and store all MLE outputs in this directory
+RAW_MLE_NAME = os.path.basename(config["mle_prefix"]).strip()
+if not RAW_MLE_NAME:
+    raise ValueError("config['mle_prefix'] is empty. Provide a short name like 'CalabreseA'.")
+MLE_DIR = "results/mle"
+os.makedirs(MLE_DIR, exist_ok=True)
+MLE_PREFIX = os.path.join(MLE_DIR, RAW_MLE_NAME)
+
+# Custom design matrix path from config
 CUSTOM_DESIGN = config["custom_design_matrix"].strip()
-MLE_PREFIX = config["mle_prefix"]
+
+# Control sgRNAs (optional)
 MLE_CTRL = config["mle_control_sgrna"].strip()
 
-# Where the design matrix will come from
-DESIGN_TXT = CUSTOM_DESIGN if CUSTOM_DESIGN else "results/mle/design_matrix.txt"
+# If not provided write an auto-built design matrix inside results/mle/
+DESIGN_TXT = CUSTOM_DESIGN if CUSTOM_DESIGN else os.path.join(MLE_DIR, "design_matrix.txt")
 
 ##################################################################
 ##                          Rule All                            ##
