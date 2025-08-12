@@ -45,13 +45,13 @@ if (length(cols) < 2) {
 ctrlname <- cols[1]
 treatname <- cols[length(cols)]
 
-# Project name defaults to the directory name (nice & unique)
+# Project name defaults to the directory name
 proj <- basename(normalizePath(output_dir, mustWork = FALSE))
 
 # -------------------------
 # Run MAGeCK Flute MLE
 # -------------------------
-# It's common to setwd to ensure artifacts are written inside output_dir
+# setwd is used to ensure artifacts are written inside output_dir
 oldwd <- getwd(); setwd(output_dir)
 on.exit(setwd(oldwd), add = TRUE)
 
