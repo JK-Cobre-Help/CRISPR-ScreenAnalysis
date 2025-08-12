@@ -17,8 +17,7 @@
 
 ## 1) Project Description
 
-**MAGeCK_CRISPR_Analysis** is a Snakemake workflow for analyzing pooled CRISPR screening data using the **MAGeCK** suite.  
-The pipeline supports both **mageck count** and **mageck mle** modes, automatically handling FASTQ quality control, optional staging of large datasets to faster storage, sgRNA counting, and design matrix generation.
+**CRISPR-ScreenAnalysis** is an automated Snakemake workflow for pooled CRISPR screen analysis using MAGeCK, supporting both single-end and paired-end data. The pipeline performs FASTQ quality control, sgRNA counting with a user-provided library, automated or custom design matrix generation, and gene-level β score estimation via MAGeCK MLE. This workflow is designed for reproducibility and scalability in Slurm-managed HPC environments.
 
 It is designed for **flexibility and reproducibility** in Slurm-managed HPC environments and is compatible with **both single-end and paired-end** CRISPR screen data.
 
