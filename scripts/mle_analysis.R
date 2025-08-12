@@ -52,10 +52,6 @@ treatname <- cols[length(cols)]
 # -------------------------
 # Run MAGeCK Flute MLE
 # -------------------------
-# setwd is used to ensure artifacts are written inside output_dir
-oldwd <- getwd(); setwd(output_dir)
-on.exit(setwd(oldwd), add = TRUE)
-
 FluteMLE(
   replicates,
   treatname = treatname,
