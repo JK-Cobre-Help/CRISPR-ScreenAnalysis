@@ -361,5 +361,5 @@ rule gene_count_summary_plots:
         "results/logs/gene_count_summary_plots.log"
     shell:
         """
-        Rscript scripts/plot_peakSummary.R "{input.gene_summary}" "{input.count_summary}" {input.design} {params.out_dir}
+        Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" {input.design} {params.out_dir}
         """
