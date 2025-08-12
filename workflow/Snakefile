@@ -64,7 +64,10 @@ run_mageck_paired = config["mageck_paired"]
 SAMPLE_LABELS = ",".join(samples_table["sample"].tolist())
 COUNTS_DIR = "results/counts"
 os.makedirs(COUNTS_DIR, exist_ok=True)
-COUNTS_PREFIX = os.path.join(COUNTS_DIR, config["counts_prefix"]) 
+RAW_COUNTS_NAME = os.path.basename(config["counts_prefix"]).strip()
+if not RAW_COUNTS_NAME:
+    raise ValueError("config['counts_prefix'] is empty. Provide a short name like 'sample1'.")
+COUNTS_PREFIX = os.path.join(COUNTS_DIR, RAW_COUNTS_NAME)
 
 # functions to lookup file paths
 def staged_name(sample, read):  # read: "R1" or "R2"
