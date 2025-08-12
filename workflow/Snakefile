@@ -361,6 +361,8 @@ if MLE_ENABLED:
 ##                  Gene & Count Summary Plots                  ##
 ##################################################################
 
+FLUTE_DIR = f"results/mle/MAGeCKFlute_{proj_name}"
+
 if MLE_ENABLED:
     rule gene_count_summary_plots:
         input:
@@ -368,9 +370,12 @@ if MLE_ENABLED:
             count_summary = f"{COUNTS_PREFIX}.countsummary.txt",
             design = DESIGN_TXT
         output:
-            mageckFlute = "results/plots/MAGeCKFlute_2025July24_CalabreseA"
+            mageckFlute = directory(FLUTE_DIR)
         params:
-            out_dir = "results/mle"
+            out_dir = "results/mle",
+            proj_name = config["proj_name"],
+            organism = config["organism"],
+            norm_method = config["norm_method"]  
         envmodules:
             config["R"],
             config["bioconductor"]
@@ -379,6 +384,6 @@ if MLE_ENABLED:
             "results/logs/gene_count_summary_plots.log"
         shell:
             """
-            Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" "{input.design}" "{params.out_dir}" "{output.hist_plot}"
+            Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" "{input.design}" "{params.out_dir}" "{params.proj_name}" "{params.organism}" "{params.norm_method}"
             """
 
