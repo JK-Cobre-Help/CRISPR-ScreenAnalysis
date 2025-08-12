@@ -63,3 +63,15 @@ FluteMLE(
   organism = "hsa",
   norm_method = "none"
 )
+
+# -------------------------
+# Generate Custom Plots
+# -------------------------
+# Simple QC: histogram of beta scores from the MLE gene summary.
+p <- ggplot(replicates, aes(x = beta)) +
+  geom_histogram(bins = 60) +
+  theme_bw() +
+  labs(title = sprintf("Beta score distribution (%s vs %s)", treatname, ctrlname),
+       x = "Beta", y = "Count")
+
+ggsave(out_png, plot = p, width = 8, height = 6, dpi = 150)
