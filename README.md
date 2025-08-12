@@ -5,7 +5,7 @@
 ![GitHub contributors](https://img.shields.io/github/contributors/KirklandLab/CRISPR-ScreenAnalysis)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/KirklandLab/CRISPR-ScreenAnalysis/total)
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/KirklandLab/CRISPR-ScreenAnalysis/latest)
-[![DOI](https://zenodo.org/badge/898608902.svg)](https://doi.org/10.5281/zenodo.15232319)
+[![DOI](https://zenodo.org/badge/1029909681.svg)](https://doi.org/10.5281/zenodo.16809383)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # CRISPR-ScreenAnalysis
@@ -148,7 +148,8 @@ N3_D14_PAC,/path/N3_D14_PAC_R1.fastq.gz,/path/N3_D14_PAC_R2.fastq.gz,true,D14_PA
 
 ---
 
-## 9) Instructions to run on Slurm managed HPC
+## 9) Instructions to run on Slurm managed HPC  
+
 9A. Download version controlled repository
 ```
 git clone https://github.com/KirklandLab/CRISPR-ScreenAnalysis.git
@@ -169,7 +170,7 @@ snakemake -npr
 ```
 
 9E.  Make a DAG diagram
-```bash
+```
 snakemake --dag | dot -Tpdf > dag.pdf
 ```
 
@@ -180,14 +181,14 @@ sbatch --wrap="snakemake -j 999 --use-envmodules --rerun-incomplete --latency-wa
 
 ---
 
-## **10) Citation**
+## 10) Citation
 
-+ Boyd, K.A. (2025). MAGeCK_CRISPR_Analysis: A reproducible Snakemake workflow for pooled CRISPR screening data analysis. Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX  
-+ [![DOI](https://zenodo.org/badge/898608902.svg)](https://doi.org/10.5281/zenodo.15232319)
++ **Boyd, K.A.** (2025). *CRISPR-ScreenAnalysis: A reproducible Snakemake workflow for pooled CRISPR screening data analysis*. *Zenodo*. https://doi.org/10.5281/zenodo.16809383  
++ [![DOI](https://zenodo.org/badge/1029909681.svg)](https://doi.org/10.5281/zenodo.16809383)
 
 ---
 
-## **11) Authorship & Contributions**
+## 11) Authorship & Contributions
 
 + **Kevin A. Boyd** – Designed and implemented the Snakemake workflow for a Slurm-managed HPC environment, modularized the pipeline structure, implemented all processing steps, integrated peak consensus method, designed plots, and created the documentation.  
 + **Jacob Kirkland** – Principal Investigator; provided experimental data and validation of activation screen logic.
@@ -197,7 +198,7 @@ This workflow was developed as part of a COBRE-funded collaborative effort. Whil
 
 ---
 
-## **12) License**
+## 12) License
 
 This project is licensed under the **Apache 2.0**. See the [LICENSE](LICENSE) file for details.  
 
