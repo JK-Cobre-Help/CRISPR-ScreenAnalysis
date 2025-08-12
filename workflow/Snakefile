@@ -361,7 +361,8 @@ if MLE_ENABLED:
 ##                  Gene & Count Summary Plots                  ##
 ##################################################################
 
-FLUTE_DIR = f"results/mle/MAGeCKFlute_{proj_name}"
+PROJ_NAME = config["proj_name"]
+FLUTE_DIR = f"results/mle/MAGeCKFlute_{PROJ_NAME}"
 
 if MLE_ENABLED:
     rule gene_count_summary_plots:
@@ -372,8 +373,8 @@ if MLE_ENABLED:
         output:
             mageckFlute = directory(FLUTE_DIR)
         params:
-            out_dir = "results/mle",
-            proj_name = config["proj_name"],
+            out_dir = "results/plots",
+            proj_name = PROJ_NAME,
             organism = config["organism"],
             norm_method = config["norm_method"]  
         envmodules:
