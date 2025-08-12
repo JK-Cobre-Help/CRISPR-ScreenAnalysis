@@ -89,7 +89,7 @@ p2 <- ggplot(gdata, aes(x = .data[[treatname]])) +
        x = "Beta", y = "Count")
 
 # plot histograms them side by side
-out_hist_png <- file.path(output_dir, sprintf("beta_hist.png", treatname, ctrlname))
+out_hist_png <- file.path(output_dir, "beta_hist.png")
 hists <- cowplot::plot_grid(p1, p2, labels = c("Control Beta","Treatment Beta"), nrow = 1)
 ggsave(out_hist_png, plot = hists, width = 12, height = 6, dpi = 150)
 
@@ -110,6 +110,6 @@ p_loess <- DensityView(gdata_loe, samples=c(ctrlname, treatname))
 
 # plot them side by side
 norm_grid <- cowplot::plot_grid(p_raw, p_cc, p_loess, labels = c("NonNormalized", "CellCycle", "Loess"), nrow = 1)
-out_norm_png <- file.path(output_dir, sprintf("beta_norm.png", treatname, ctrlname))
+out_norm_png <- file.path(output_dir, "beta_norm.png")
 ggsave(out_norm_png, plot = norm_grid, width = 12, height = 6, dpi = 150)
 
