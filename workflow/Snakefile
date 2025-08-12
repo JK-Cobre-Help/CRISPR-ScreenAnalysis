@@ -8,32 +8,40 @@ configfile: "config/config.yml"
 # Email: kevinboyd76@gmail.com
 # GitHub: https://github.com/kevinboyd76
 # Date Created: August 8, 2025
-# Last Modified: August 8, 2025
-# Version: 1.0.0
+# Last Modified: August 12, 2025
+# Version: 1.1.0
 #
-# Description: 
-# 
-#
-#
-#
+# Description:
+# This Snakemake workflow processes raw FASTQ files from a pooled CRISPR screen
+# through quality control, FASTQ staging (if needed), count matrix generation
+# with MAGeCK, optional design matrix construction, and MAGeCK MLE analysis.
+# It is designed to work on both single-end and paired-end data and can process 
+# both CRISPR activation and knockout screens. It is built to run on a Slurm-based 
+# HPC with module-managed environments.
 
 ##################################################################
 ##                  Specific Steps in Pipeline                  ##
 ##################################################################
 
-#  Steps:
+# Steps:
 #  1) Quality control using FastQC (per read) and MultiQC (summary report)
-#  2) 
-#  3) 
-#  4) 
-#  5) 
+#  2) Stage FASTQ files to local storage if `stage_fastqs: true` in config.yml
+#  3) Generate count table and count summary with MAGeCK count
+#  4) Build design matrix automatically from samples.csv, or use a provided one
+#  5) Run MAGeCK MLE to estimate gene-level beta scores (if enabled)
+#  6) Generate summary plots from MLE gene summary and count summary (if enabled)
 #
-# 
-#  Outputs:
-#    • FastQC and MultiQC HTML reports
-#    • Mageck Counts
-#    • Raw, CPM, and scaled BigWig files
-
+# Outputs:
+#  • Per-sample FastQC HTML and ZIP files
+#  • MultiQC HTML summary report
+#  • MAGeCK count output:
+#      – counts_prefix.count.txt
+#      – counts_prefix.countsummary.txt
+#  • Auto-generated design_matrix.txt (if custom not supplied)
+#  • MAGeCK MLE output (if enabled):
+#      – mle_prefix.gene_summary.txt
+#      – Additional MLE files from MAGeCK
+#  • Peak summary plot (PNG) from gene_count_summary_plots rule (if enabled)
 
 ##################################################################
 ##                    Define input functions                    ##
