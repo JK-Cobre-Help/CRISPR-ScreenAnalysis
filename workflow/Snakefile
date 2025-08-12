@@ -147,7 +147,7 @@ rule all:
         f"{COUNTS_PREFIX}.count.txt",
         f"{COUNTS_PREFIX}.countsummary.txt",
         *([f"{MLE_PREFIX}.gene_summary.txt"] if MLE_ENABLED else []),
-        *(["directory(FLUTE_DIR)"] if MLE_ENABLED else [])
+        *([FLUTE_DIR] if MLE_ENABLED else [])
         *([f"{OUT_DIR}/beta_hist.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/beta_norm.png"] if MLE_ENABLED else [])
 
