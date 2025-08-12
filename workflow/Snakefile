@@ -346,21 +346,23 @@ if MLE_ENABLED:
 ##                  Gene & Count Summary Plots                  ##
 ##################################################################
 
-rule gene_count_summary_plots:
-    input:
-        gene_summary = f"{MLE_PREFIX}.gene_summary.txt",
-        count_summary=f"{COUNTS_PREFIX}.countsummary.txt",
-        design = DESIGN_TXT
-    output:
-        hist_plot="results/plots/peak_summary_plot.png"
-    params:
-        out_dir="results/mle"
-    envmodules:
-        config["R"],
-        config["bioconductor"]
-    log:
-        "results/logs/gene_count_summary_plots.log"
-    shell:
-        """
-        Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" {input.design} {params.out_dir} {output.hist_plot}
-        """
+if MLE_ENABLED:
+    rule gene_count_summary_plots:
+        input:
+            gene_summary = f"{MLE_PREFIX}.gene_summary.txt",
+            count_summary = f"{COUNTS_PREFIX}.countsummary.txt",
+            design = DESIGN_TXT
+        output:
+            hist_plot = "results/plots/peak_summary_plot.png"
+        params:
+            out_dir = "results/mle"
+        envmodules:
+            config["R"],
+            config["bioconductor"]
+        log:
+            "results/logs/gene_count_summary_plots.log"
+        shell:
+            """
+            Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" "{input.design}" "{params.out_dir}" "{output.hist_plot}"
+            """
+
