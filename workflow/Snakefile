@@ -365,9 +365,6 @@ OUT_DIR   = "results/plots"
 PROJ_NAME = config["proj_name"]
 FLUTE_DIR = f"{OUT_DIR}/MAGeCKFlute_{PROJ_NAME}"
 
-HIST_PNG = f"{OUT_DIR}/beta_hist_{treatname}_vs_{ctrlname}.png"
-NORM_PNG = f"{OUT_DIR}/beta_norm_{treatname}_vs_{ctrlname}.png"
-
 if MLE_ENABLED:
     rule gene_count_summary_plots:
         input:
@@ -376,8 +373,8 @@ if MLE_ENABLED:
             design = DESIGN_TXT
         output:
             mageckFlute = directory(FLUTE_DIR),
-            hist_plot = HIST_PNG,
-            norm_plot = NORM_PNG
+            hist_plot = f"{OUT_DIR}/beta_hist.png",
+            norm_plot = f"{OUT_DIR}/beta_norm.png"
         params:
             out_dir = OUT_DIR,
             proj_name = PROJ_NAME,
@@ -391,6 +388,9 @@ if MLE_ENABLED:
             "results/logs/gene_count_summary_plots.log"
         shell:
             """
-            Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" "{input.design}" "{params.out_dir}" "{params.proj_name}" "{params.organism}" "{params.norm_method}"
+            Rscript scripts/mle_analysis.R \
+              "{input.gene_summary}" "{input.count_summary}" "{input.design}" \
+              "{params.out_dir}" "{params.proj_name}" "{params.organism}" "{params.norm_method}" \
+              2> {log}
             """
 
