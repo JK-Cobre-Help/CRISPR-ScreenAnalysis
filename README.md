@@ -1,118 +1,151 @@
+![GitHub Release](https://img.shields.io/github/v/release/KirklandLab/CRISPR-ScreenAnalysis)
+![GitHub Release Date](https://img.shields.io/github/release-date/KirklandLab/CRISPR-ScreenAnalysis)
+![GitHub repo size](https://img.shields.io/github/repo-size/KirklandLab/CRISPR-ScreenAnalysis)
+![GitHub last commit](https://img.shields.io/github/last-commit/KirklandLab/CRISPR-ScreenAnalysis)
+![GitHub contributors](https://img.shields.io/github/contributors/KirklandLab/CRISPR-ScreenAnalysis)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/KirklandLab/CRISPR-ScreenAnalysis/total)
+![GitHub commits since latest release](https://img.shields.io/github/commits-since/KirklandLab/CRISPR-ScreenAnalysis/latest)
+[![DOI](https://zenodo.org/badge/898608902.svg)](https://doi.org/10.5281/zenodo.15232319)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 # CRISPR-ScreenAnalysis
 
+![ReplicatePeaks](/images/CRISPR-Screen.png)
+*(Image generated with DALL-E. OpenAI, 2024: Scientific data visualization: Genome Wide CRISPR Screens in bioinformatics)*
 
+---
 
+## 1) Project Description
+
+**MAGeCK_CRISPR_Analysis** is a Snakemake workflow for analyzing pooled CRISPR screening data using the **MAGeCK** suite.  
+The pipeline supports both **mageck count** and **mageck mle** modes, automatically handling FASTQ quality control, optional staging of large datasets to faster storage, sgRNA counting, and design matrix generation.
+
+It is designed for **flexibility and reproducibility** in Slurm-managed HPC environments and is compatible with **both single-end and paired-end** CRISPR screen data.
+
+---
+
+### Key Features
+
++ **Quality Control**
+  + Runs **FastQC** on raw FASTQs and summarizes results with **MultiQC**
+  + Works with both single-end and paired-end reads
+
++ **Optional FASTQ Staging**
+  + Copies input FASTQ files from slower archive storage to a writable, fast-access location before analysis
+  + Controlled by `stage_fastqs` in `config.yml`
+
++ **MAGeCK Count**
+  + Reads paired-end or single-end FASTQs directly or from staged copies
+  + Uses a specified sgRNA library file for read assignment
+  + Outputs both `.count.txt` and `.countsummary.txt` for all samples
+
++ **Automatic Design Matrix Generation**
+  + Builds a valid MAGeCK MLE design matrix from `samples.csv`  
+  + Includes:
+    + Baseline column
+    + One-hot encoded factors for experimental conditions
+  + Option to bypass auto-build with a custom design matrix file
+
++ **MAGeCK MLE Analysis**
+  + Estimates gene-level β scores using experimental factors defined in the design matrix
+  + Optional `--control-sgrna` parameter
+
++ **Reproducible Configuration**
+  + All analysis parameters, file paths, and environment module versions stored in `config.yml`
+
+---
+
+## 2) Intended Use Case
+
+This pipeline is intended for **researchers performing genome-wide or targeted CRISPR screens** who want:
+
++ Automated **QC**, **sgRNA counting**, and **statistical modeling**
++ Consistent output for downstream gene ranking and pathway analysis
++ A workflow that runs efficiently on **Slurm HPC systems**
++ Easy modification of experimental designs without altering code
+
+---
+
+## 3) Dependencies & Configuration
+
+Tool versions and paths are defined in `config/config.yml`.  
+Example key fields:
+
++ **samples_csv**: Path to `samples.csv` file  
++ **stage_fastqs**: `true`/`false` to enable staging  
++ **mageck_paired**: Set to `true` for paired-end data  
++ **sgRNA_library**: Path to sgRNA library file  
++ **counts_prefix**: Output name for count files  
++ **mle_enabled**: Enable or disable MAGeCK MLE step  
++ **mle_prefix**: Output name for MLE results  
++ **mle_control_sgrna**: Optional control sgRNA file  
++ **custom_design_matrix**: Path to user-provided design matrix file
+
+**Example:**
+```yaml
+samples_csv: "config/samples.csv"
+stage_fastqs: true
+mageck_paired: false
+sgRNA_library: "resources/calabreseA_library.txt"
+counts_prefix: "sample1"
+mle_enabled: true
+mle_prefix: "results/mle/CalabreseA"
+mle_control_sgrna: ""
+custom_design_matrix: ""
+fastqc: "fastqc/0.12.1"
+multiqc: "multiqc/1.21"
+mageck: "mageck/0.5.9.2"
+apptainer: "apptainer/1.3.6"
+```
+
+---
+
+## 3) Tools and Modules
+
+---
+
+## 5) Example Data
+
+---
 
 ## 6) Explanation of `samples.csv`
+**Required Columns**:  
++ sample – unique sample ID
++ fastq1 – path to R1 FASTQ
++ fastq2 – path to R2 FASTQ (or blank if single-end)
++ include_mle – whether to include this sample in MLE design matrix (true/false)
++ factor – experimental condition name (none if baseline)
 
-**IMPORTANT**: Always check the config/samples.csv with your sample name, FASTQs locations, include_mle option, and factors defined before running.
+**Example**:
+```csv
+sample,fastq1,fastq2,include_mle,factor
+N1_D0,/path/N1_D0_R1.fastq.gz,/path/N1_D0_R2.fastq.gz,true,none
+N2_D0,/path/N2_D0_R1.fastq.gz,/path/N2_D0_R2.fastq.gz,true,none
+N3_D0,/path/N3_D0_R1.fastq.gz,/path/N3_D0_R2.fastq.gz,true,none
+N1_D14_DMSO,/path/N1_D14_DMSO_R1.fastq.gz,/path/N1_D14_DMSO_R2.fastq.gz,true,D14_DMSO
+N2_D14_DMSO,/path/N2_D14_DMSO_R1.fastq.gz,/path/N2_D14_DMSO_R2.fastq.gz,true,D14_DMSO
+N3_D14_DMSO,/path/N3_D14_DMSO_R1.fastq.gz,/path/N3_D14_DMSO_R2.fastq.gz,true,D14_DMSO
+N1_D14_PAC,/path/N1_D14_PAC_R1.fastq.gz,/path/N1_D14_PAC_R2.fastq.gz,true,D14_PAC
+N2_D14_PAC,/path/N2_D14_PAC_R1.fastq.gz,/path/N2_D14_PAC_R2.fastq.gz,true,D14_PAC
+N3_D14_PAC,/path/N3_D14_PAC_R1.fastq.gz,/path/N3_D14_PAC_R2.fastq.gz,true,D14_PAC
+```
 
-This pipeline builds a MAGeCK‐MLE design matrix **directly from `config/samples.csv`** (unless you supply a custom matrix).  
-The CSV is simple but flexible, and it produces a design matrix that matches how MAGeCK models log fold changes.
+---
 
-### Required columns in `samples.csv`
+## 7) Output Overview
+|  Category          | 	Output Location                         |
+|--------------------|------------------------------------------|
+| FastQC Reports     | `results/qc/fastqc/`                     |
+| MultiQC Report     | `results/qc/multiqc/multiqc_report.html` |
+| MAGeCK Counts      | `results/counts/*.count.txt`             |
+| MAGeCK Count Summ. | `results/counts/*.countsummary.txt`      |
+| Design Matrix      | `results/mle/design_matrix.txt`          |
+| MLE Results        | `results/mle/*.gene_summary.txt`         |
 
-| column        | type    | meaning |
-|---------------|---------|---------|
-| `sample`      | string  | Unique sample label. This must match the sample labels used in `mageck count` (i.e., row names in the count matrix). |
-| `fastq1`      | path    | R1 FASTQ path. |
-| `fastq2`      | path    | R2 FASTQ path (paired) or a placeholder/empty if single-end (the pipeline still expects the column). |
-| `include_mle` | bool    | Whether this row participates in the **MLE** model. Rows with `false` are ignored by the design builder. |
-| `factor`      | string  | The treatment/condition label for this sample. Use the literal sentinel **`none`** (or `NA`, empty) to mark **baseline** samples. |
+---
 
-+ **Note**:  
-  + **`include_mle`** is **case‐insensitive** — any of the following values will be interpreted as **True**:  
-    + `true`, `TRUE`, `True`, `1`, `t`, `T`, `yes`, `Yes`, `y`, `Y`  
-    + All other values will be interpreted as **False**.  
-  + **`factor`** values are normalized — the following will all be converted to **`none`**:  
-    + `none`, `NONE`, `None`, `NA`, `na`, `NaN`, `null`, or an empty cell.  
-    + All other non‐`none` values are treated as factor names for one‐hot encoding in the design matrix.  
+## 8) Example Output Plots
 
-### MAGeCK MLE Model  
-
-MAGeCK MLE fits gene‐level effects using a **linear design** per sample:
-+ effect(sample) = β_baseline
-+ β_factor1 * I(sample ∈ factor1)
-+ β_factor2 * I(sample ∈ factor2)
-
-+ **Baseline**: all samples contribute a baseline column (all **1**s).
-+ **Factors**: each distinct non-`none` value in the `factor` column becomes **one binary column** (one-hot encoding).
-+ There are **no interaction terms**; it’s baseline + one-hot factors.
-
-### Why a single `factor` column?  
-+ Keeps the CSV compact and readable.  
-+ Still supports many designs — just use unique factor labels (e.g., `D14_DMSO`, `D14_PAC`, `Day6_Auxin`).  
-+ For more complex designs (interactions, multi-factor models), you can prebuild your own matrix.  
-
-### How the pipeline builds the design matrix
-
-1. **Read & filter**: Keep only rows with `include_mle = true`.
-2. **Order rows**: Row order matches the `sample` column (must match counts file).
-3. **Normalize factors**: Replace `NA`, empty, `none` → `"none"`.
-4. **Collect factors**: Unique factor values (excluding `none`) in first appearance order.
-5. **Emit matrix**:  
-   + Column 1: `group` (sample name)  
-   + Column 2: `baseline` (all `1`)  
-   + One column per factor; a row gets `1` if its `factor` matches that column, else `0`.
-
-Matrix is saved as:
-+ results/mle/design_matrix.txt
-
-**Unless `custom_design_matrix` is set in `config.yml`.**
-
-### Example1 — Endpoint vs baseline
-
-**Example `samples.csv`**
-
-| sample         | fastq1   | fastq2   | include_mle | factor     |
-|----------------|----------|----------|-------------|------------|
-| N1_D0          | ...      | ...      | TRUE        | none       |
-| N2_D0          | ...      | ...      | TRUE        | none       |
-| N3_D0          | ...      | ...      | TRUE        | none       |
-| N1_D14_DMSO    | ...      | ...      | TRUE        | D14_DMSO   |
-| N2_D14_DMSO    | ...      | ...      | TRUE        | D14_DMSO   |
-| N3_D14_DMSO    | ...      | ...      | TRUE        | D14_DMSO   |
-| N1_D14_PAC     | ...      | ...      | TRUE        | D14_PAC    |
-| N2_D14_PAC     | ...      | ...      | TRUE        | D14_PAC    |
-| N3_D14_PAC     | ...      | ...      | TRUE        | D14_PAC    |
-
-
-**Auto-generated design matrix**
-
-| group          | baseline | D14_DMSO | D14_PAC |
-|----------------|----------|----------|---------|
-| N1_D0          | 1        | 0        | 0       |
-| N2_D0          | 1        | 0        | 0       |
-| N3_D0          | 1        | 0        | 0       |
-| N1_D14_DMSO    | 1        | 1        | 0       |
-| N2_D14_DMSO    | 1        | 1        | 0       |
-| N3_D14_DMSO    | 1        | 1        | 0       |
-| N1_D14_PAC     | 1        | 0        | 1       |
-| N2_D14_PAC     | 1        | 0        | 1       |
-| N3_D14_PAC     | 1        | 0        | 1       |
-
-
-### Best practices
-+ Sample names: must match mageck count output exactly.
-+ Baseline: Use none for controls; multiple baselines are fine.
-+ Factor names: No spaces; underscores recommended.
-+ Balance: Keep replicate counts even across factors.
-+ Validation: Always check results/mle/design_matrix.txt before interpreting results.
-
-### MLE Output Interpretation
-+ The gene summary includes columns for each factor (plus baseline).
-+ β_baseline: shared drift/essentiality effect.
-+ β_factorX: treatment effect relative to baseline.
-
-**For endpoint treatment effects, baseline vs. treatment factors is the cleanest approach.**
-
-### Checklist before running
-+ Unique sample names
-+ include_mle correctly set
-+ Baselines labeled none
-+ Paths valid
-+ Inspect generated matrix in results/mle/design_matrix.txt
- 
 ---
 
 ## 9) Instructions to run on Slurm managed HPC
@@ -144,3 +177,28 @@ snakemake --dag | dot -Tpdf > dag.pdf
 ```
 sbatch --wrap="snakemake -j 999 --use-envmodules --rerun-incomplete --latency-wait 300 --cluster-config config/cluster_config.yml --cluster 'sbatch -A {cluster.account} -p {cluster.partition} --cpus-per-task {cluster.cpus-per-task}  -t {cluster.time} --mem {cluster.mem} --output {cluster.output} --job-name {cluster.name}'"
 ```
+
+---
+
+## **10) Citation**
+
++ Boyd, K.A. (2025). MAGeCK_CRISPR_Analysis: A reproducible Snakemake workflow for pooled CRISPR screening data analysis. Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX  
++ [![DOI](https://zenodo.org/badge/898608902.svg)](https://doi.org/10.5281/zenodo.15232319)
+
+---
+
+## **11) Authorship & Contributions**
+
++ **Kevin A. Boyd** – Designed and implemented the Snakemake workflow for a Slurm-managed HPC environment, modularized the pipeline structure, implemented all processing steps, integrated peak consensus method, designed plots, and created the documentation.  
++ **Jacob Kirkland** – Principal Investigator; provided experimental data and validation of activation screen logic.
++ **Christopher L. Sansam** – Principal Investigator; provided additional experimental data and validation of knockout screen logic.  
+
+This workflow was developed as part of a COBRE-funded collaborative effort. While the pipeline was built specifically for use within the Kirkland Lab, it is broadly applicable to CRISPR-Screen data analysis in other research settings.  
+
+---
+
+## **12) License**
+
+This project is licensed under the **Apache 2.0**. See the [LICENSE](LICENSE) file for details.  
+
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
