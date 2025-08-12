@@ -326,3 +326,26 @@ if MLE_ENABLED:
               $EXTRA \
               2> {log}
             """
+
+##################################################################
+##                  Gene & Count Summary Plots                  ##
+##################################################################
+
+rule gene_count_summary_plots:
+    input:
+        peak_list=expand("results/peakCalling/{sample}_0.05_peaks.narrowPeak", sample=samples_table.index),
+        frip_list=expand("results/alignment/bam/{sample}_frip.txt", sample=samples_table.index),
+        metadata="config/samples.csv"
+    output:
+        "results/plots/peak_summary_plot.png"
+    params:
+        out_dir="results/plots"
+    envmodules:
+        config["R"],
+        config["bioconductor"]
+    log:
+        "results/logs/snakelogs/generate_peak_summary_plots.log"
+    shell:
+        """
+        Rscript scripts/plot_peakSummary.R "{input.peak_list}" "{input.frip_list}" {input.metadata} {params.out_dir}
+        """
