@@ -11,7 +11,7 @@
 # CRISPR-ScreenAnalysis
 
 ![ReplicatePeaks](/images/CRISPR-Screen.png)
-*(Image generated with DALL-E. OpenAI, 2024: Scientific data visualization: Genome Wide CRISPR Screens in bioinformatics)*
+*(Image generated with DALL-E. OpenAI, 2025: Scientific data visualization: Genome Wide CRISPR Screens in bioinformatics)*
 
 ---
 
