@@ -133,7 +133,8 @@ rule all:
         "results/qc/multiqc/multiqc_report.html",
         f"{COUNTS_PREFIX}.count.txt",
         f"{COUNTS_PREFIX}.countsummary.txt",
-        *([f"{MLE_PREFIX}.gene_summary.txt"] if MLE_ENABLED else [])
+        *([f"{MLE_PREFIX}.gene_summary.txt"] if MLE_ENABLED else []),
+        *(["results/plots/peak_summary_plot.png"] if MLE_ENABLED else [])
         
 
 ##################################################################
@@ -351,7 +352,7 @@ rule gene_count_summary_plots:
         count_summary=f"{COUNTS_PREFIX}.countsummary.txt",
         design = DESIGN_TXT
     output:
-        "results/plots/peak_summary_plot.png"
+        hist_plot="results/plots/peak_summary_plot.png"
     params:
         out_dir="results/mle"
     envmodules:
@@ -361,5 +362,5 @@ rule gene_count_summary_plots:
         "results/logs/gene_count_summary_plots.log"
     shell:
         """
-        Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" {input.design} {params.out_dir}
+        Rscript scripts/mle_analysis.R "{input.gene_summary}" "{input.count_summary}" {input.design} {params.out_dir} {output.hist_plot}
         """
