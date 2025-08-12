@@ -157,8 +157,8 @@ rule fastqc_raw:
     shell:
         """
         # Run FastQC with output directed to writable folder
-        fastqc -o results/qc/fastqc {input.fq1}
-        fastqc -o results/qc/fastqc {input.fq2}
+        fastqc --threads {threads} -o results/qc/fastqc {input.fq1}
+        fastqc --threads {threads} -o results/qc/fastqc {input.fq2}
 
         # Rename output files to match specified output paths
         dir="results/qc/fastqc"
@@ -344,6 +344,7 @@ if MLE_ENABLED:
               -k "{input.counts}" \
               -d "{input.design}" \
               -n "{params.prefix}" \
+              --threads {threads} \
               $EXTRA \
               2> {log}
             """
