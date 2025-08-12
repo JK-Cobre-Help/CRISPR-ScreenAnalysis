@@ -19,6 +19,9 @@ gene_summary <- args[1]
 count_summary <- args[2]
 design_file <- args[3]
 output_dir <- args[4]
+proj_name <- args[5]
+organism <- args[6]
+norm_method <- args[7]
 
 # -------------------------
 # Ensure output directory exists
@@ -60,9 +63,9 @@ FluteMLE(
   replicates,
   treatname = treatname,
   ctrlname = ctrlname,
-  proj = proj,
-  organism = "hsa",
-  norm_method = "none"
+  proj = proj_name,
+  organism = organism,
+  norm_method = norm_method
 )
 
 # -------------------------
