@@ -10,20 +10,17 @@ __default__:
 # ------------------------------------------------------------------------------
 # Quality Control
 # ------------------------------------------------------------------------------
-
 fastqc_raw:
   cpus-per-task: 4
   mem: 8G
-  cores: 4
   time: "02:00:00"
   name: "{rule}.{wildcards.sample}"
   output: results/logs/{rule}.{wildcards.sample}.out
   error: results/logs/{rule}.{wildcards.sample}.err
 
 multiqc_raw:
-  cpus-per-task: 4
+  cpus-per-task: 2
   mem: 16G
-  cores: 4
   time: "02:00:00"
   name: "{rule}"
   output: results/logs/{rule}.out
@@ -32,11 +29,9 @@ multiqc_raw:
 # ------------------------------------------------------------------------------
 # Make Temporary FASTQs
 # ------------------------------------------------------------------------------
-
 stage_fastqs:
-  cpus-per-task: 4
+  cpus-per-task: 2
   mem: 16G
-  cores: 4
   time: "02:00:00"
   name: "{rule}.{wildcards.sample}"
   output: results/logs/{rule}.{wildcards.sample}.out
@@ -45,11 +40,9 @@ stage_fastqs:
 # ------------------------------------------------------------------------------
 # Mageck Count
 # ------------------------------------------------------------------------------
-
 mageck_count:
   cpus-per-task: 16
   mem: 64G
-  cores: 16
   time: "08:00:00"
   name: "{rule}"
   output: results/logs/{rule}.out
@@ -58,7 +51,6 @@ mageck_count:
 # ------------------------------------------------------------------------------
 # Build Design Matrix
 # ------------------------------------------------------------------------------
-
 build_design_matrix:
   cpus-per-task: 1
   mem: 1G
@@ -71,11 +63,20 @@ build_design_matrix:
 # ------------------------------------------------------------------------------
 # Mageck MLE
 # ------------------------------------------------------------------------------
-
 mageck_mle:
   cpus-per-task: 16
   mem: 64G
-  cores: 16
+  time: "08:00:00"
+  name: "{rule}"
+  output: results/logs/{rule}.out
+  error: results/logs/{rule}.err
+
+# ------------------------------------------------------------------------------
+# Generate Plots
+# ------------------------------------------------------------------------------
+mageck_mle:
+  cpus-per-task: 16
+  mem: 64G
   time: "08:00:00"
   name: "{rule}"
   output: results/logs/{rule}.out
