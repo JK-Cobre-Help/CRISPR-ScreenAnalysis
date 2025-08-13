@@ -40,6 +40,39 @@ replicates <- read.table(gene_summary, header = TRUE, sep = "\t", check.names = 
 countsummary <- read.table(count_summary, header = TRUE, sep = "\t", check.names = FALSE)
 design <- read.table(design_file, header = TRUE, sep = "\t", check.names = FALSE)
 
+# Escape regex specials in a literal string
+escape_regex <- function(x) gsub("([][{}()+*^$.|\\?\\-])", "\\\\\\1", x)
+
+# Find "<prefix><sep>metric" where sep can be ".", "_", "-", or "|", case-insensitive
+guess_metric_col <- function(prefix, metric, cols) {
+  # exact case-insensitive match of "prefix|metric" (or with other seps)
+  # build a regex: ^prefix([._\\-|])?metric$
+  pat <- paste0("^", escape_regex(prefix), "([._\\-|])?", escape_regex(metric), "$")
+  cand <- grep(pat, cols, ignore.case = TRUE, value = TRUE)
+  if (length(cand)) return(cand[1])
+
+  # fallback: anything ending with metric (rarely needed, but keeps us resilient)
+  tail_pat <- paste0("([._\\-|])", escape_regex(metric), "$")
+  cand2 <- grep(tail_pat, cols, ignore.case = TRUE, value = TRUE)
+  if (length(cand2)) return(cand2[1])
+
+  NA_character_
+}
+
+all_cols <- names(replicates)
+
+# Robustly locate FDR columns for control/treatment
+fdr_ctrl_col  <- guess_metric_col(ctrlname,  "fdr", all_cols)
+fdr_treat_col <- guess_metric_col(treatname, "fdr", all_cols)
+
+if (is.na(fdr_treat_col)) {
+  stop(
+    "Could not find treatment FDR column for '", treatname, "'.\n",
+    "Tried separators one of: '.', '_', '-', '|'.\n",
+    "Available columns include:\n  - ", paste(all_cols, collapse = "\n  - ")
+  )
+}
+
 # -------------------------
 # Derive treat/ctrl from design matrix
 # (exclude 'group' and 'baseline'; use remaining factor columns in order)
@@ -126,8 +159,8 @@ if (nm == "cell_cycle") {
 # Build positive/negative selection table
 # -------------------------
 # Dynamic FDR column names in the gene_summary:
-fdr_ctrl_col  <- paste0(ctrlname,  ".fdr")
-fdr_treat_col <- paste0(treatname, ".fdr")
+fdr_ctrl_col  <- guess_metric_col(ctrlname,  "fdr", names(gdata1))
+fdr_treat_col <- guess_metric_col(treatname, "fdr", names(gdata1))
 
 # Start with betas (possibly normalized) and diff (treat - ctrl)
 sel_df <- tibble::tibble(
@@ -186,7 +219,7 @@ ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 8, height
 # -------------------------
 # Volcano (diff vs -log10 FDR)
 # -------------------------
-treat_fdr_col <- paste0(treatname, ".fdr")
+treat_fdr_col <- fdr_treat_col
 vol_df <- merge(
   gsel[, c("Gene", ctrlname, treatname)],
   replicates[, c("Gene", treat_fdr_col)],
