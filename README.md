@@ -19,8 +19,6 @@
 
 **CRISPR-ScreenAnalysis** is an automated Snakemake workflow for pooled CRISPR screen analysis using MAGeCK, supporting both single-end and paired-end data. The pipeline performs FASTQ quality control, sgRNA counting with a user-provided library, automated or custom design matrix generation, and gene-level β score estimation via MAGeCK MLE. This workflow is designed for reproducibility and scalability in Slurm-managed HPC environments.
 
----
-
 ### Key Features
 
 + **Quality Control**
@@ -32,8 +30,9 @@
   + Controlled by `stage_fastqs` in `config.yml`
 
 + **MAGeCK Count**
-  + Reads paired-end or single-end FASTQs directly or from staged copies
-  + Uses a specified sgRNA library file for read assignment
+  + Reads directly from raw or staged (copied) FASTQs
+  + Supports both paired-end and single-end modes
+  + Assigns reads to sgRNAs from a user-provided library
   + Outputs both `.count.txt` and `.countsummary.txt` for all samples
 
 + **Automatic Design Matrix Generation**
@@ -45,7 +44,8 @@
 
 + **MAGeCK MLE Analysis**
   + Estimates gene-level β scores using experimental factors defined in the design matrix
-  + Optional `--control-sgrna` parameter
+  + Accepts optional `control-sgRNA` file for normalization
+  + Produces gene summary tables for ranking
 
 + **Reproducible Configuration**
   + All analysis parameters, file paths, and environment module versions stored in `config.yml`
@@ -89,10 +89,6 @@ mle_enabled: true
 mle_prefix: "results/mle/CalabreseA"
 mle_control_sgrna: ""
 custom_design_matrix: ""
-fastqc: "fastqc/0.12.1"
-multiqc: "multiqc/1.21"
-mageck: "mageck/0.5.9.2"
-apptainer: "apptainer/1.3.6"
 ```
 
 ---
