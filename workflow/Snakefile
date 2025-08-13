@@ -135,6 +135,8 @@ DESIGN_TXT = CUSTOM_DESIGN if CUSTOM_DESIGN else os.path.join(MLE_DIR, "design_m
 OUT_DIR   = "results/plots"
 PROJ_NAME = config["proj_name"]
 FLUTE_DIR = f"{OUT_DIR}/MAGeCKFlute_{PROJ_NAME}"
+FDR_THR = float(config["fdr_threshold"])
+FDR_THR_STR = f"{FDR_THR:.2f}"
 
 ##################################################################
 ##                          Rule All                            ##
@@ -380,12 +382,18 @@ if MLE_ENABLED:
             hist_plot = f"{OUT_DIR}/beta_hist.png",
             norm_plot = f"{OUT_DIR}/beta_norm.png",
             scatter_plot = f"{OUT_DIR}/beta_scatter.png",
-            scatter_plot_labeled = f"{OUT_DIR}/beta_scatter_labeled.png"
+            scatter_plot_labeled = f"{OUT_DIR}/beta_scatter_labeled.png",
+            qc_gini = f"{OUT_DIR}/qc_gini.png",
+            qc_zero_counts = f"{OUT_DIR}/qc_zero_counts.png",
+            qc_maprates = f"{OUT_DIR}/qc_maprates.png",
+            volcano = f"{OUT_DIR}/volcano_diff_vs_neglog10FDR.png",
+            sig_hits = f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"
         params:
             out_dir = OUT_DIR,
             proj_name = PROJ_NAME,
             organism = config["organism"],
-            norm_method = config["norm_method"]  
+            norm_method = config["norm_method"],
+            fdr_threshold = FDR_THR
         envmodules:
             config["R"],
             config["bioconductor"]
@@ -396,7 +404,8 @@ if MLE_ENABLED:
             """
             Rscript scripts/mle_analysis.R \
               "{input.gene_summary}" "{input.count_summary}" "{input.design}" \
-              "{params.out_dir}" "{params.proj_name}" "{params.organism}" "{params.norm_method}" \
+              "{params.out_dir}" "{params.proj_name}" "{params.organism}" \
+              "{params.norm_method}" "{params.fdr_threshold}" \
               2> {log}
             """
 
