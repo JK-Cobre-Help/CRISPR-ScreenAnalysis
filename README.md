@@ -19,24 +19,26 @@
 
 **CRISPR-ScreenAnalysis** is an automated Snakemake workflow for pooled CRISPR screen analysis using MAGeCK, supporting both single-end and paired-end data. The pipeline performs FASTQ quality control, sgRNA counting with a user-provided library, automated or custom design matrix generation, and gene-level β score estimation via MAGeCK MLE. This workflow is designed for reproducibility and scalability in Slurm-managed HPC environments.
 
+**CRISPR-ScreenAnalysis** is a fully automated Snakemake workflow for analyzing pooled CRISPR screens using **MAGeCK** that supports both single-end and paired-end sequencing data. The pipeline performs quality control on raw FASTQ files, counts sgRNA reads using a user-provided library, generates an experimental design matrix (automatically or from a custom file), and estimates gene-level β scores via MAGeCK MLE. This workflow is designed for reproducibility, scalability, and allows for easy user defined modifications of configuration settings in a Slurm-managed HPC environment.
+
 ### Key Features
 
 + **Quality Control**
-  + Runs **FastQC** on raw FASTQs and summarizes results with **MultiQC**
-  + Works with both single-end and paired-end reads
+  + Runs **FastQC** on raw FASTQs and compiles a summary report with **MultiQC**
+  + Works with both single-end and paired-end sequencing
 
 + **Optional FASTQ Staging**
-  + Copies input FASTQ files from slower archive storage to a writable, fast-access location before analysis
-  + Controlled by `stage_fastqs` in `config.yml`
+  + Copies input FASTQ files from slower archive storage to a writable, fast-access location before processing
+  + Controlled by `stage_fastqs` option in `config.yml`
 
 + **MAGeCK Count**
-  + Reads directly from raw or staged (copied) FASTQs
+  + Processes FASTQs directly or from staged copies
   + Supports both paired-end and single-end modes
-  + Assigns reads to sgRNAs from a user-provided library
+  + Assigns reads to sgRNAs from a user-provided library file
   + Outputs both `.count.txt` and `.countsummary.txt` for all samples
 
 + **Automatic Design Matrix Generation**
-  + Builds a valid MAGeCK MLE design matrix from `samples.csv`  
+  + Builds a valid **MAGeCK MLE** design matrix from `samples.csv`  
   + Includes:
     + Baseline column
     + One-hot encoded factors for experimental conditions
@@ -45,40 +47,55 @@
 + **MAGeCK MLE Analysis**
   + Estimates gene-level β scores using experimental factors defined in the design matrix
   + Accepts optional `control-sgRNA` file for normalization
-  + Produces gene summary tables for ranking
+  + Produces gene summary tables and ranking outputs
 
-+ **Reproducible Configuration**
-  + All analysis parameters, file paths, and environment module versions stored in `config.yml`
++ **Comprehensive Plotting & Visualization**
+  + Integrates **MAGeCKFlute** for downstream visualization of MLE results
+  + Generates publication-ready plots including:
+  + β score histograms and normalization comparisons
+  + β vs β scatterplots (with and without top-gene labels)
+  + Volcano plots (effect size vs significance)
+  + QC plots for Gini index, zero-count sgRNAs, and mapping rates
+  + Produces selection tables of significantly enriched or depleted genes, filtered by configurable FDR threshold in the `config.yml`
+
++ **Reproducible Configuratione**
+  + All file paths, parameters, and tool versions are controlled in a single `config.yml`
+  + Easily adapted for both CRISPR activation and knockout screens
 
 ---
 
 ## 2) Intended Use Case
 
-This pipeline is intended for **researchers performing genome-wide or targeted CRISPR screens** who want:
+This workflow is intended for researchers performing **genome-wide** or **targeted CRISPR screens** who need an end-to-end, reproducible solution for data processing, statistical modeling, and visualization. It is particularly suited for use in Slurm-managed HPC environments where scalability and efficiency are essential.
 
-+ Automated **QC**, **sgRNA counting**, and **statistical modeling**
-+ Consistent output for downstream gene ranking and pathway analysis
-+ A workflow that runs efficiently on **Slurm HPC systems**
-+ Easy modification of experimental designs without altering code
+It is ideal for researchers who want:  
+
++ Automated **QC**, **sgRNA counting**, **design matrix generation**, and **MAGeCK MLE statistical modeling**  
++ Consistent, publication-ready output for **gene ranking**, **pathway enrichment**, and **screen performance assessment**  
++ Integrated visualizations (via MAGeCKFlute) to quickly interpret screen results, including **β score distributions**, **volcano plots**, **scatter plots**, **QC summaries**, and **pathway analysis**  
++ A workflow that can efficiently handle **single-end** or **paired-end** sequencing from small targeted libraries to large genome-wide screens 
++ Easy modification of experimental designs and plotting parameters without altering code  
 
 ---
 
 ## 3) Dependencies & Configuration
 
-Tool versions and paths are defined in `config/config.yml`.  
-Example key fields:
+All tool versions, paths, configurations, and parameters are defined in `config/config.yml`.  
 
-+ **samples_csv**: Path to `samples.csv` file  
-+ **stage_fastqs**: `true`/`false` to enable staging  
-+ **mageck_paired**: Set to `true` for paired-end data  
-+ **sgRNA_library**: Path to sgRNA library file  
-+ **counts_prefix**: Output name for count files  
-+ **mle_enabled**: Enable or disable MAGeCK MLE step  
-+ **mle_prefix**: Output name for MLE results  
-+ **mle_control_sgrna**: Optional control sgRNA file  
-+ **custom_design_matrix**: Path to user-provided design matrix file
+### Key Configuration Fields
+| Field                  | Description                                               | Example                            |
+|------------------------|-----------------------------------------------------------|------------------------------------|
+| `samples_csv`          | Path to `samples.csv` with all input samples and metadata | `config/samples.csv`               |
+| `stage_fastqs`         | Copy FASTQs to local storage before processing            | `true`                             |
+| `mageck_paired`        | Set to `true` for paired-end sequencing                   | `false`                            |
+| `sgRNA_library`        | Path to sgRNA reference library                           | `resources/calabreseA_library.txt` |
+| `counts_prefix`        | Output name for count files                               | `sample1`                          |
+| `mle_enabled`          | Enable or disable MAGeCK MLE step                         | `true`                             |
+| `mle_prefix`           | Output name for MLE results                               | `CalabreseA`                       |
+| `mle_control_sgrna`    | Path to optional control sgRNA file                       | `""`                               |
+| `custom_design_matrix` | Path to a user-supplied design matrix (skip auto-build)   | `""`                               |
 
-**Example:**
+Example `config.yml`:
 ```yaml
 samples_csv: "config/samples.csv"
 stage_fastqs: true
@@ -86,58 +103,151 @@ mageck_paired: false
 sgRNA_library: "resources/calabreseA_library.txt"
 counts_prefix: "sample1"
 mle_enabled: true
-mle_prefix: "results/mle/CalabreseA"
+mle_prefix: "CalabreseA"
 mle_control_sgrna: ""
 custom_design_matrix: ""
 ```
 
 ---
 
-## 3) Tools and Modules
+## 4) Tools and Modules
+
+The pipeline requires both **command-line tools** and **R packages** to run all steps, including plotting.  
+
+### Core Command-Line Tools
+| Tool / Module           | Purpose                                        | Example Version |
+|-------------------------|------------------------------------------------|-----------------|
+| `fastqc`                | FASTQ quality control                          | 0.12.1          |
+| `multiqc`               | Summarizes QC results                          | 1.21            |
+| `mageck`                | sgRNA counting & MLE analysis                  | 0.5.9.2         |
+| `apptainer`             | Containerized execution (optional)             | 1.3.6           |
+| `R` + `bioconductor`    | Required for plotting and MAGeCKFlute          | 4.4.1           |
+
+### Required R/Bioconductor Packages
+These must be installed in the R environment specified in your `config.yml` for plotting and MAGeCKFlute integration:  
+
++ **MAGeCKFlute**: Downstream visualization of MAGeCK results
++ **cowplot**: Plot arrangement
++ **ggplot2**: General plotting
++ **ggrepel**: Non-overlapping gene labels in scatter plots
++ **rlang**: Tidy evaluation helpers
++ **dplyr**: Data manipulation
++ **tibble**: Data frame handling
+
+When using environment modules, ensure the R module loads with Bioconductor support (e.g., `bioconductor/3.19 gsl`).
+
+Example `config.yml`:
+```yaml
+fastqc: "fastqc/0.12.1"
+multiqc: "multiqc/1.21"
+mageck: "mageck/0.5.9.2"
+apptainer: "apptainer/1.3.6"
+R: "R/4.4.1-mkl"
+bioconductor: "bioconductor/3.19 gsl"
+```
 
 ---
 
 ## 5) Example Data
 
+A minimal test dataset can be placed in a `resources/` folder (not included currently). Update `samples.csv` to point to these FASTQs for a quick test run. Once confirmed, replace with your personal CRISPR-Screen data.
+
 ---
 
 ## 6) Explanation of `samples.csv`
-**Required Columns**:  
-+ sample – unique sample ID
-+ fastq1 – path to R1 FASTQ
-+ fastq2 – path to R2 FASTQ (or blank if single-end)
-+ include_mle – whether to include this sample in MLE design matrix (true/false)
-+ factor – experimental condition name (none if baseline)
 
-**Example**:
+The `samples.csv` file defines all input samples and their associated metadata.  
+**Correct formatting of this file is essential** as any errors in column names, order, or values will cause the workflow to fail.  
+
+### Required Columns
+| Column         | Description |
+|----------------|-------------|
+| `sample`       | Unique short name for the sample (no spaces, special characters, or duplicates). Used in file naming and output tracking. |
+| `fastq1`       | Full path to the R1 FASTQ file. Must point to an existing file readable by the compute environment. |
+| `fastq2`       | Full path to the R2 FASTQ file (paired-end) or left blank if single-end. |
+| `include_mle`  | Boolean flag (`true` or `false`) indicating whether this sample should be included in the MAGeCK MLE analysis and design matrix. |
+| `factor`       | Experimental condition label for the sample. Use `none` for baseline/control samples; other values should be short condition names (no spaces). |
+
+### Rules for Valid Entries
++ **Unique `sample` values** – duplicate names will overwrite outputs and break downstream steps.  
++ **Case-sensitive paths** – ensure `fastq1` and `fastq2` match the exact case of filenames on disk.  
++ **Boolean formatting** – `include_mle` must be one of: `true`, `false`, `1`, `0`, `yes`, `no` (case-insensitive).  
++ **Factor naming** – avoid spaces; use underscores or short identifiers (e.g., `D4_DMSO`, `D14_PAC`, etc.).  
++ **Baseline handling** – only one factor should be set to `none`; all other conditions will be encoded relative to this baseline in the design matrix.  
+
+### Example: Paired-End Design
+**Note**: Even if paired-end file paths are provided the workflow can still be run as single-end.  
+
 ```csv
 sample,fastq1,fastq2,include_mle,factor
-N1_D0,/path/N1_D0_R1.fastq.gz,/path/N1_D0_R2.fastq.gz,true,none
-N2_D0,/path/N2_D0_R1.fastq.gz,/path/N2_D0_R2.fastq.gz,true,none
-N3_D0,/path/N3_D0_R1.fastq.gz,/path/N3_D0_R2.fastq.gz,true,none
-N1_D14_DMSO,/path/N1_D14_DMSO_R1.fastq.gz,/path/N1_D14_DMSO_R2.fastq.gz,true,D14_DMSO
-N2_D14_DMSO,/path/N2_D14_DMSO_R1.fastq.gz,/path/N2_D14_DMSO_R2.fastq.gz,true,D14_DMSO
-N3_D14_DMSO,/path/N3_D14_DMSO_R1.fastq.gz,/path/N3_D14_DMSO_R2.fastq.gz,true,D14_DMSO
-N1_D14_PAC,/path/N1_D14_PAC_R1.fastq.gz,/path/N1_D14_PAC_R2.fastq.gz,true,D14_PAC
-N2_D14_PAC,/path/N2_D14_PAC_R1.fastq.gz,/path/N2_D14_PAC_R2.fastq.gz,true,D14_PAC
-N3_D14_PAC,/path/N3_D14_PAC_R1.fastq.gz,/path/N3_D14_PAC_R2.fastq.gz,true,D14_PAC
+N1_D0,/archive/kirkland/KLab21/22CCHNLT1/N1_D0_S19_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N1_D0_S19_R2_001.fastq.gz,true,none
+N2_D0,/archive/kirkland/KLab21/22CCHNLT1/N2_D0_S23_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N2_D0_S23_R2_001.fastq.gz,true,none
+N3_D0,/archive/kirkland/KLab21/22CCHNLT1/N3_D0_S27_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N3_D0_S27_R2_001.fastq.gz,true,none
+N1_D14_DMSO,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_DMSO_S21_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_DMSO_S21_R2_001.fastq.gz,true,D14_DMSO
+N2_D14_DMSO,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_DMSO_S25_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_DMSO_S25_R2_001.fastq.gz,true,D14_DMSO
+N3_D14_DMSO,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_DMSO_S29_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_DMSO_S29_R2_001.fastq.gz,true,D14_DMSO
+N1_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_PAC_S22_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_PAC_S22_R2_001.fastq.gz,true,D14_PAC
+N2_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_PAC_S26_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_PAC_S26_R2_001.fastq.gz,true,D14_PAC
+N3_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_PAC_S30_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_PAC_S30_R2_001.fastq.gz,true,D14_PAC
 ```
+
+### How This File is Used in the Workflow
++ **QC Steps** – `fastq1`/`fastq2` are passed directly to FastQC and MultiQC.  
++ **MAGeCK Count** – `sample` names become the `--sample-label` list; FASTQ paths are passed to `--fastq` / `--fastq-2`.  
++ **Design Matrix Building** – Only rows with `include_mle = true` are included. The `factor` column determines grouping for β score estimation.  
++ **Plotting** – `factor` labels are used to determine control vs treatment in MAGeCKFlute visualizations. The first `factor` provided will be set as the control (x-axis) while the last `factor` provided will be the treatment (y-axis) of the β score plots.  
+
+### Troubleshooting Common Errors
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Workflow fails with `KeyError` on a sample name | Duplicate `sample` values in CSV | Ensure each sample name is unique |
+| `No such file or directory` error during FastQC or MAGeCK count | `fastq1`/`fastq2` paths are incorrect or have wrong capitalization | Verify file paths and match exact case on disk |
+| Design matrix is missing samples | `include_mle` set to `false` or mistyped | Ensure intended samples have `true` in `include_mle` |
+| MAGeCK MLE produces only one factor column | All `factor` values set to `none` or baseline | Assign correct condition labels for treatments |
+| Plotting script fails to find FDR columns | Incorrect `factor` names or mismatch between design matrix and MAGeCK output | Check `factor` column values match experimental conditions exactly |
 
 ---
 
-## 7) Output Overview
-|  Category          | 	Output Location                         |
-|--------------------|------------------------------------------|
-| FastQC Reports     | `results/qc/fastqc/`                     |
-| MultiQC Report     | `results/qc/multiqc/multiqc_report.html` |
-| MAGeCK Counts      | `results/counts/*.count.txt`             |
-| MAGeCK Count Summ. | `results/counts/*.countsummary.txt`      |
-| Design Matrix      | `results/mle/design_matrix.txt`          |
-| MLE Results        | `results/mle/*.gene_summary.txt`         |
+## 7) Output Overview  
+
+| Category | Output Location | Description |
+|----------|-----------------|-------------|
+| **FastQC Reports** | `results/qc/fastqc/` | Per-sample HTML and ZIP files from FastQC (`*_R1_fastqc.html/.zip`, `*_R2_fastqc.html/.zip`) |
+| **MultiQC Report** | `results/qc/multiqc/multiqc_report.html` | Aggregated QC report summarizing all FastQC results |
+| **MAGeCK Counts** | `results/counts/*.count.txt` | Main sgRNA count table from `mageck count` |
+| **MAGeCK Count Summary** | `results/counts/*.countsummary.txt` | Summary statistics from `mageck count` |
+| **Design Matrix** | `results/mle/design_matrix.txt` *(or custom path)* | Auto-generated or user-supplied MAGeCK MLE design matrix |
+| **MLE-Dependent Outputs** | *—* | **All outputs below are only generated if** `mle_enabled: true` in `config.yml` |
+| **MLE Results** | `results/mle/*.gene_summary.txt` | Gene-level β scores and FDRs from `mageck mle` |
+| **Selection Table** | `results/plots/selection_table.norm_<method>.tsv` | Table of positive/negative selected genes filtered by FDR threshold |
+| **Significant Hits Table** | `results/plots/<proj_name>_sig_hits_FDR_<thr>.tsv` | Final ranked list of significant genes based on β score and FDR |
+| **QC Plots** | `results/plots/qc_gini.png`, `qc_zero_counts.png`, `qc_maprates.png` | Plots showing screen quality metrics (Gini index, zero counts, mapping rates) |
+| **β Score Plots** | `results/plots/beta_hist.png`, `beta_norm.png`, `beta_scatter.png`, `beta_scatter_labeled.png` | Histograms, normalization comparisons, scatter plots (with and without labels) |
+| **Volcano Plot** | `results/plots/volcano_diff_vs_neglog10FDR.png` | Effect size vs statistical significance for treatments |
+| **MAGeCKFlute Directory** | `results/plots/MAGeCKFlute_<proj_name>/` | MAGeCKFlute output including enrichment plots and pathway analysis results |
 
 ---
 
 ## 8) Example Output Plots
+
+The workflow generates a variety of plots for visualizing CRISPR screen results and quality metrics.  
+All plots are saved in `results/plots/` unless otherwise specified.
+
+| Plot | Example Filename | Description |
+|------|------------------|-------------|
+| **β Score Histograms** | `beta_hist.png` | Side-by-side histograms of β score distributions for control and treatment samples. |
+| **β Score Normalization Comparison** | `beta_norm.png` | Density plots comparing raw β scores with cell-cycle and loess normalization methods. |
+| **β vs β Scatter Plot** | `beta_scatter.png` | Scatter plot comparing β scores for control (x-axis) vs treatment (y-axis), colored by FDR. |
+| **β vs β Scatter Plot (Labeled)** | `beta_scatter_labeled.png` | Same as above, but with top-ranked genes labeled using `ggrepel`. |
+| **Volcano Plot** | `volcano_diff_vs_neglog10FDR.png` | Effect size (β score difference) vs -log10(FDR) for treatment samples. |
+| **QC Plot – Gini Index** | `qc_gini.png` | Bar plot showing Gini index for each sample (evenness of sgRNA distribution). |
+| **QC Plot – Zero Count sgRNAs** | `qc_zero_counts.png` | Bar plot showing the number of sgRNAs with zero reads per sample. |
+| **QC Plot – Mapping Rates** | `qc_maprates.png` | Mapping rate for each sample from the count summary. |
+
+**MAGeCKFlute Directory**  
+If `mle_enabled: true`, the workflow also generates a directory:  
+`results/plots/MAGeCKFlute_<proj_name>/`  
+This folder contains additional pathway enrichment plots, QC metrics, and summary visualizations created by **MAGeCKFlute**. These are not shown here in full due to the large number of outputs, but they provide further insight into screen performance and biological interpretation.
 
 ---
 
