@@ -378,7 +378,7 @@ if MLE_ENABLED:
 ##################################################################
 
 if MLE_ENABLED:
-    rule mle_analysis:
+    rule mle_analysis_plots:
         input:
             gene_summary = f"{MLE_PREFIX}.gene_summary.txt",
             count_summary = f"{COUNTS_PREFIX}.countsummary.txt",
