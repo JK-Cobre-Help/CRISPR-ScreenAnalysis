@@ -153,7 +153,11 @@ rule all:
         *([f"{OUT_DIR}/beta_hist.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/beta_norm.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/beta_scatter.png"] if MLE_ENABLED else []),
-        *([f"{OUT_DIR}/beta_scatter_labeled.png"] if MLE_ENABLED else [])
+        *([f"{OUT_DIR}/beta_scatter_labeled.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/qc_gini.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/qc_zero_counts.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/qc_maprates.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"] if MLE_ENABLED else [])
 
 ##################################################################
 ##                       Quality Control                        ##
