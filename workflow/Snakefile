@@ -137,6 +137,7 @@ PROJ_NAME = config["proj_name"]
 FLUTE_DIR = f"{OUT_DIR}/MAGeCKFlute_{PROJ_NAME}"
 FDR_THR = float(config["fdr_threshold"])
 FDR_THR_STR = f"{FDR_THR:.2f}"
+NORM_METHOD_STR = str(config["norm_method"]).lower()
 
 ##################################################################
 ##                          Rule All                            ##
@@ -157,6 +158,7 @@ rule all:
         *([f"{OUT_DIR}/qc_gini.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/qc_zero_counts.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/qc_maprates.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"] if MLE_ENABLED else [])
 
 ##################################################################
@@ -391,6 +393,7 @@ if MLE_ENABLED:
             qc_zero_counts = f"{OUT_DIR}/qc_zero_counts.png",
             qc_maprates = f"{OUT_DIR}/qc_maprates.png",
             volcano = f"{OUT_DIR}/volcano_diff_vs_neglog10FDR.png",
+            selection_table = f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv"
             sig_hits = f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"
         params:
             out_dir = OUT_DIR,
