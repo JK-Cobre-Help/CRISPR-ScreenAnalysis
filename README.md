@@ -178,15 +178,15 @@ The `samples.csv` file defines all input samples and their associated metadata.
 
 ```csv
 sample,fastq1,fastq2,include_mle,factor
-N1_D0,/archive/kirkland/KLab21/22CCHNLT1/N1_D0_S19_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N1_D0_S19_R2_001.fastq.gz,true,none
-N2_D0,/archive/kirkland/KLab21/22CCHNLT1/N2_D0_S23_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N2_D0_S23_R2_001.fastq.gz,true,none
-N3_D0,/archive/kirkland/KLab21/22CCHNLT1/N3_D0_S27_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N3_D0_S27_R2_001.fastq.gz,true,none
-N1_D14_DMSO,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_DMSO_S21_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_DMSO_S21_R2_001.fastq.gz,true,D14_DMSO
-N2_D14_DMSO,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_DMSO_S25_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_DMSO_S25_R2_001.fastq.gz,true,D14_DMSO
-N3_D14_DMSO,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_DMSO_S29_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_DMSO_S29_R2_001.fastq.gz,true,D14_DMSO
-N1_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_PAC_S22_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N1_D14_PAC_S22_R2_001.fastq.gz,true,D14_PAC
-N2_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_PAC_S26_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N2_D14_PAC_S26_R2_001.fastq.gz,true,D14_PAC
-N3_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_PAC_S30_R1_001.fastq.gz,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_PAC_S30_R2_001.fastq.gz,true,D14_PAC
+N1_D0,/path/to/N1_D0_S19_R1_001.fastq.gz,/path/to/N1_D0_S19_R2_001.fastq.gz,true,none
+N2_D0,/path/to/N2_D0_S23_R1_001.fastq.gz,/path/to/N2_D0_S23_R2_001.fastq.gz,true,none
+N3_D0,/path/to/N3_D0_S27_R1_001.fastq.gz,/path/to/N3_D0_S27_R2_001.fastq.gz,true,none
+N1_D14_DMSO,/path/to/N1_D14_DMSO_S21_R1_001.fastq.gz,/path/to/N1_D14_DMSO_S21_R2_001.fastq.gz,true,D14_DMSO
+N2_D14_DMSO,/path/to/N2_D14_DMSO_S25_R1_001.fastq.gz,/path/to/N2_D14_DMSO_S25_R2_001.fastq.gz,true,D14_DMSO
+N3_D14_DMSO,/path/to/N3_D14_DMSO_S29_R1_001.fastq.gz,/path/to/N3_D14_DMSO_S29_R2_001.fastq.gz,true,D14_DMSO
+N1_D14_PAC,/path/to/N1_D14_PAC_S22_R1_001.fastq.gz,/path/to/N1_D14_PAC_S22_R2_001.fastq.gz,true,D14_PAC
+N2_D14_PAC,/path/to/N2_D14_PAC_S26_R1_001.fastq.gz,/path/to/N2_D14_PAC_S26_R2_001.fastq.gz,true,D14_PAC
+N3_D14_PAC,/path/to/N3_D14_PAC_S30_R1_001.fastq.gz,/path/to/N3_D14_PAC_S30_R2_001.fastq.gz,true,D14_PAC
 ```
 
 ### How This File is Used in the Workflow
