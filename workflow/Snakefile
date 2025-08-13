@@ -406,7 +406,7 @@ if MLE_ENABLED:
             config["bioconductor"]
         threads: 2
         log:
-            "results/logs/gene_count_summary_plots.log"
+            "results/logs/mle_analysis_plots.log"
         shell:
             """
             Rscript scripts/mle_analysis.R \
