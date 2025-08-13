@@ -281,8 +281,8 @@ sig_list <- vol_df |>
   dplyr::select(all_of(keep_cols))
 
 # Friendly column names
-names(sig_list)[names(sig_list) == ctrlname]      <- paste0(ctrlname,  "_beta")
-names(sig_list)[names(sig_list) == treatname]     <- paste0(treatname, "_beta")
+names(sig_list)[names(sig_list) == ctrlname] <- paste0(ctrlname,  "_beta")
+names(sig_list)[names(sig_list) == treatname] <- paste0(treatname, "_beta")
 names(sig_list)[names(sig_list) == treat_fdr_col] <- paste0(treatname, "_FDR")
 if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(sig_list)) {
   names(sig_list)[names(sig_list) == fdr_ctrl_col] <- paste0(ctrlname, "_FDR")
