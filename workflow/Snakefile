@@ -149,7 +149,9 @@ rule all:
         *([f"{MLE_PREFIX}.gene_summary.txt"] if MLE_ENABLED else []),
         *([FLUTE_DIR] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/beta_hist.png"] if MLE_ENABLED else []),
-        *([f"{OUT_DIR}/beta_norm.png"] if MLE_ENABLED else [])
+        *([f"{OUT_DIR}/beta_norm.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/beta_scatter.png"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/beta_scatter_labeled.png"] if MLE_ENABLED else [])
 
 ##################################################################
 ##                       Quality Control                        ##
@@ -376,7 +378,9 @@ if MLE_ENABLED:
         output:
             mageckFlute = directory(FLUTE_DIR),
             hist_plot = f"{OUT_DIR}/beta_hist.png",
-            norm_plot = f"{OUT_DIR}/beta_norm.png"
+            norm_plot = f"{OUT_DIR}/beta_norm.png",
+            scatter_plot = f"{OUT_DIR}/beta_scatter.png",
+            scatter_plot_labeled = f"{OUT_DIR}/beta_scatter_labeled.png"
         params:
             out_dir = OUT_DIR,
             proj_name = PROJ_NAME,
