@@ -90,7 +90,7 @@ p2 <- ggplot(gdata, aes(x = .data[[treatname]])) +
 
 # plot histograms them side by side
 out_hist_png <- file.path(output_dir, "beta_hist.png")
-hists <- cowplot::plot_grid(p1, p2, labels = c("Control Beta","Treatment Beta"), nrow = 1)
+hists <- cowplot::plot_grid(p1, p2, nrow = 1)
 ggsave(out_hist_png, plot = hists, width = 12, height = 6, dpi = 150)
 
 ################################################################################
