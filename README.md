@@ -215,7 +215,7 @@ N3_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_PAC_S30_R1_001.fastq.gz,/ar
 | **MAGeCK Counts** | `results/counts/*.count.txt` | Main sgRNA count table from `mageck count` |
 | **MAGeCK Count Summary** | `results/counts/*.countsummary.txt` | Summary statistics from `mageck count` |
 | **Design Matrix** | `results/mle/design_matrix.txt` *(or custom path)* | Auto-generated or user-supplied MAGeCK MLE design matrix |
-| **MLE-Dependent Outputs** | *—* | **All outputs below are only generated if** `mle_enabled: true` in `config.yml` |
+| **MLE-Dependent Outputs** | *----------------------* | **All outputs below are only generated if** `mle_enabled: true` in `config.yml` |
 | **MLE Results** | `results/mle/*.gene_summary.txt` | Gene-level β scores and FDRs from `mageck mle` |
 | **Selection Table** | `results/plots/selection_table.norm_<method>.tsv` | Table of positive/negative selected genes filtered by FDR threshold |
 | **Significant Hits Table** | `results/plots/<proj_name>_sig_hits_FDR_<thr>.tsv` | Final ranked list of significant genes based on β score and FDR |
