@@ -224,18 +224,30 @@ rule multiqc_raw:
 ##################################################################
 
 if STAGE:
+    STAGE_DIR = "results/staged_fastqs"
+
+    # 1) Explicit temp directory target
+    rule stage_fastqs_dir:
+        output:
+            dir = temp(directory(STAGE_DIR))
+        shell:
+            """
+            mkdir -p {output.dir}
+            """
+
+    # 2) Per-sample staging depends on the dir target
     rule stage_fastqs:
         input:
-            unpack(fq_dict_from_sample)
+            unpack(fq_dict_from_sample),
+            dir = rules.stage_fastqs_dir.output.dir
         output:
-            temporary_fq1=temp("results/staged_fastqs/{sample}_R1_staged.fastq.gz"),
-            temporary_fq2=temp("results/staged_fastqs/{sample}_R2_staged.fastq.gz")
+            temporary_fq1 = temp(f"{STAGE_DIR}/{{sample}}_R1_staged.fastq.gz"),
+            temporary_fq2 = temp(f"{STAGE_DIR}/{{sample}}_R2_staged.fastq.gz")
         threads: 2
         log:
             "results/logs/staged_{sample}.log"
         shell:
             """
-            mkdir -p results/staged_fastqs
             cp -f {input.fq1} {output.temporary_fq1}
             cp -f {input.fq2} {output.temporary_fq2}
             """
