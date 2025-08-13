@@ -10,6 +10,7 @@ suppressPackageStartupMessages({
   library(ggrepel)
   library(rlang)
   library(dplyr)
+  library(tibble)
 })
 
 # -------------------------
@@ -129,11 +130,11 @@ fdr_ctrl_col  <- paste0(ctrlname,  ".fdr")
 fdr_treat_col <- paste0(treatname, ".fdr")
 
 # Start with betas (possibly normalized) and diff (treat - ctrl)
-sel_df <- data.frame(
+sel_df <- tibble::tibble(
   Gene = gsel$Gene,
-  !!ctrlname := as.numeric(gsel[[ctrlname]]),    # control beta
-  !!treatname := as.numeric(gsel[[treatname]]),   # treatment beta
-  diff = as.numeric(gsel[[treatname]]) - as.numeric(gsel[[ctrlname]])
+  !!ctrlname := as.numeric(gsel[[ctrlname]]),
+  !!treatname := as.numeric(gsel[[treatname]]),
+  diff =  as.numeric(gsel[[treatname]]) - as.numeric(gsel[[ctrlname]])
 )
 
 # Add FDRs if present in the MLE gene summary (replicates). Align by Gene to be safe.
@@ -168,7 +169,12 @@ p_gini <- BarView(cs, x = "Label", y = "GiniIndex", ylab="Gini index", main="Eve
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
 ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 8, height = 5, dpi = 150)
 
-cs$Missed <- if ("Zerocounts" %in% names(cs)) log10(pmax(cs$Zerocounts, 1)) else NA_real_
+if ("Zerocounts" %in% names(cs)) {
+  cs$Missed <- log10(pmax(cs$Zerocounts, 1))  # avoid -Inf
+} else {
+  cs$Missed <- rep(NA_real_, nrow(cs))
+}
+
 p_zero <- BarView(cs, x = "Label", y = "Missed", fill = "#394E80",
                   ylab="Log10 Zero Count sgRNAs", main="Missed sgRNAs") +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
