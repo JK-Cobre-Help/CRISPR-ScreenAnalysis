@@ -194,8 +194,8 @@ p_gini <- BarView(cs, x = "Label", y = "GiniIndex", ylab="Gini index", main="Eve
 ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 10, height = 8, dpi = 150)
 
 # zero counts
-p_zero <- BarView(cs, x = "Label", y = "Missed", fill = "#394E80",
-                  ylab="Log10 Zero Count sgRNAs", main="Missed sgRNAs") +
+p_zero <- BarView(cs, x = "Label", y = "Zerocounts", fill = "#394E80",
+                  ylab="Zero Count sgRNAs", main="Missed sgRNAs") +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = -1))
 ggsave(file.path(output_dir, "qc_zero_counts.png"), plot = p_zero, width = 10, height = 8, dpi = 150)
 
