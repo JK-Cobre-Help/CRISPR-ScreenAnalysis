@@ -97,17 +97,11 @@ ggsave(out_hist_png, plot = hists, width = 12, height = 6, dpi = 150)
 # -------------------------
 # Plot normalization (none | cell_cycle | loess)
 # -------------------------
-# methods for normalization
+# compare methods for normalization
 gdata_cc = NormalizeBeta(gdata, samples=c(ctrlname, treatname), method="cell_cycle")
 gdata_loe = NormalizeBeta(gdata, samples=c(ctrlname, treatname), method="loess")
-
-#to compare density of the non-normalized betas
 p_raw <- DensityView(gdata, samples=c(ctrlname, treatname))
-
-#to compare density of the normalized betas
 p_cc <- DensityView(gdata_cc, samples=c(ctrlname, treatname))
-
-#to compare density of the normalized betas
 p_loe <- DensityView(gdata_loe, samples=c(ctrlname, treatname))
 
 # plot them side by side
@@ -162,40 +156,63 @@ if (length(fdr_keep) > 1) {
 # If original FDR columns exist with ".fdr" suffix, also add friendly aliases
 if (fdr_ctrl_col %in% names(sel_df))  sel_df[[paste0(ctrlname,  "_FDR")]]  <- sel_df[[fdr_ctrl_col]]
 if (fdr_treat_col %in% names(sel_df)) sel_df[[paste0(treatname, "_FDR")]] <- sel_df[[fdr_treat_col]]
+write.table(sel_df, file.path(output_dir, sprintf("selection_table.norm_%s.tsv", nm)), sep="\t", quote=FALSE, row.names=FALSE)
 
 # -------------------------
-# Beta vs Beta scatter (color = treatment FDR) with top-50 labels
+# Counts QC plots
+# -------------------------
+cs <- countsummary
+if ("Label" %in% names(cs)) cs$Label <- gsub("_R[12]_001$", "", cs$Label)
+
+p_gini <- BarView(cs, x = "Label", y = "GiniIndex", ylab="Gini index", main="Evenness of sgRNA reads") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
+ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 8, height = 5, dpi = 150)
+
+cs$Missed <- if ("Zerocounts" %in% names(cs)) log10(pmax(cs$Zerocounts, 1)) else NA_real_
+p_zero <- BarView(cs, x = "Label", y = "Missed", fill = "#394E80",
+                  ylab="Log10 Zero Count sgRNAs", main="Missed sgRNAs") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
+ggsave(file.path(output_dir, "qc_zero_counts.png"), plot = p_zero, width = 8, height = 5, dpi = 150)
+
+p_map <- MapRatesView(cs)
+ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 8, height = 5, dpi = 150)
+
+# -------------------------
+# Volcano (diff vs -log10 FDR)
 # -------------------------
 treat_fdr_col <- paste0(treatname, ".fdr")
+vol_df <- merge(
+  gsel[, c("Gene", ctrlname, treatname)],
+  replicates[, c("Gene", treat_fdr_col)],
+  by = "Gene", all.x = TRUE
+)
+vol_df$diff   <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
+vol_df$LogFDR <- -log10(vol_df[[treat_fdr_col]])
+p_vol <- ScatterView(vol_df, x="diff", y="LogFDR", label="Gene", model="volcano", top=10) +
+  ggtitle(sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold))
+ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"), plot = p_vol, width = 8, height = 6, dpi = 150)
 
+# -------------------------
+# Beta vs Beta scatter (color = treatment FDR) top-50 labeled
+# -------------------------
 df_scatter <- merge(
   gsel[, c("Gene", ctrlname, treatname)],
   replicates[, c("Gene", treat_fdr_col)],
-  by = "Gene",
-  all.x = TRUE
+  by = "Gene", all.x = TRUE
 )
-
-p_beta_scatter <- ggplot(
-  df_scatter,
-  aes(
-    x = .data[[ctrlname]],
-    y = .data[[treatname]],
-    color = .data[[treat_fdr_col]]
-  )
-) +
+p_beta_scatter <- ggplot(df_scatter, aes(
+  x = .data[[ctrlname]],
+  y = .data[[treatname]],
+  color = .data[[treat_fdr_col]]
+)) +
   geom_point(alpha = 0.8, size = 1.6) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   theme_bw() +
-  labs(
-    title = sprintf("Beta vs Beta (%s): %s vs %s (color = %s FDR)",
-                    nm, treatname, ctrlname, treatname),
-    x = sprintf("%s beta", ctrlname),
-    y = sprintf("%s beta", treatname),
-    color = sprintf("%s FDR", treatname)
-  ) +
+  labs(title = sprintf("Beta vs Beta (%s): %s vs %s (color = %s FDR)", nm, treatname, ctrlname, treatname),
+       x = sprintf("%s beta", ctrlname), y = sprintf("%s beta", treatname),
+       color = sprintf("%s FDR", treatname)) +
   scale_colour_gradient(low = "#ff7f00", high = "#7570b3")
 
-# Top 50 by lowest treatment FDR (ignore NAs)
 top_lab <- df_scatter |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]])) |>
   dplyr::arrange(.data[[treat_fdr_col]]) |>
@@ -205,87 +222,24 @@ p_beta_scatter_labeled <- p_beta_scatter +
   ggrepel::geom_text_repel(
     data = top_lab,
     aes(label = Gene),
-    size = 2.5, max.overlaps = 100,
-    box.padding = 0.3, point.padding = 0.2, segment.size = 0.2
+    size = 2.5, max.overlaps = 100, box.padding = 0.3,
+    point.padding = 0.2, segment.size = 0.2
   )
 
-ggsave(file.path(output_dir, "beta_scatter.png"),
-       plot = p_beta_scatter, width = 8, height = 8, dpi = 150)
+ggsave(file.path(output_dir, "beta_scatter.png"), plot = p_beta_scatter, width = 7, height = 6, dpi = 150)
+ggsave(file.path(output_dir, "beta_scatter_labeled.png"), plot = p_beta_scatter_labeled, width = 7, height = 6, dpi = 150)
 
-ggsave(file.path(output_dir, "beta_scatter_labeled.png"),
-       plot = p_beta_scatter_labeled, width = 8, height = 8, dpi = 150)
-              
-# =========================
-# QC plots from countsummary
-# =========================
-cs <- countsummary
-
-# clean labels if needed (be permissive about R1/R2 suffix)
-if ("Label" %in% names(cs)) {
-  cs$Label <- gsub("_R[12]_001$", "", cs$Label)
-}
-
-# Gini index
-p_gini <- BarView(cs, x = "Label", y = "GiniIndex",
-                  ylab = "Gini index", main = "Evenness of sgRNA reads") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
-ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 8, height = 5, dpi = 150)
-
-# Zero-count sgRNAs (log10)
-if ("Zerocounts" %in% names(cs)) {
-  cs$Missed <- log10(pmax(cs$Zerocounts, 1))  # avoid -Inf
-  p_zero <- BarView(cs, x = "Label", y = "Missed", fill = "#394E80",
-                    ylab = "Log10 Zero Count sgRNAs", main = "Missed sgRNAs") +
-    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
-  ggsave(file.path(output_dir, "qc_zero_counts.png"), plot = p_zero, width = 8, height = 5, dpi = 150)
-}
-
-# Percent mapped / rates
-# (MapRatesView is provided by MAGeCKFlute; it expects standard columns from countsummary)
-p_map <- MapRatesView(cs)
-ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 8, height = 5, dpi = 150)
-
-# =========================
-# Volcano plot (diff vs -log10(FDR))
-# =========================
-treat_fdr_col <- paste0(treatname, ".fdr")
-
-vol_df <- merge(
-  gsel[, c("Gene", ctrlname, treatname)],   # betas from chosen normalization
-  replicates[, c("Gene", treat_fdr_col)],   # treatment FDR from MLE gene summary
-  by = "Gene", all.x = TRUE
-)
-vol_df$diff   <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
-vol_df$LogFDR <- -log10(vol_df[[treat_fdr_col]])
-
-p_vol <- ScatterView(vol_df, x = "diff", y = "LogFDR", label = "Gene",
-                     model = "volcano", top = 10) +
-         ggtitle(sprintf("Volcano: %s (norm=%s)", paste(treatname, "vs", ctrlname), tolower(norm_method)))
-ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
-       plot = p_vol, width = 8, height = 6, dpi = 150)
-
-# =========================
-# Significant gene list (by treatment FDR)
-# =========================
-fdr_threshold <- 0.10
-
-sig_cols <- c(
-  "Gene", ctrlname, treatname, "diff", treat_fdr_col
-)
-
+# -------------------------
+# Significant genes (by treatment FDR threshold)
+# -------------------------
+sig_cols <- c("Gene", ctrlname, treatname, "diff", treat_fdr_col)
 sig_list <- vol_df |>
-  dplyr::filter(!is.na(.data[[treat_fdr_col]]),
-                .data[[treat_fdr_col]] <= fdr_threshold) |>
+  dplyr::filter(!is.na(.data[[treat_fdr_col]]), .data[[treat_fdr_col]] <= fdr_threshold) |>
   dplyr::arrange(.data[[treat_fdr_col]]) |>
   dplyr::select(all_of(sig_cols))
+names(sig_list)[names(sig_list) == ctrlname] <- paste0(ctrlname,  "_beta")
+names(sig_list)[names(sig_list) == treatname] <- paste0(treatname, "_beta")
+names(sig_list)[names(sig_list) == treat_fdr_col] <- paste0(treatname, "_FDR")
 
-# Friendlier column names for the output table
-names(sig_list)[names(sig_list) == ctrlname]       <- paste0(ctrlname,  "_beta")
-names(sig_list)[names(sig_list) == treatname]      <- paste0(treatname, "_beta")
-names(sig_list)[names(sig_list) == treat_fdr_col]  <- paste0(treatname, "_FDR")
-
-sig_path <- file.path(
-  output_dir,
-  sprintf("%s_sig_hits_FDR_%.2f.tsv", proj_name, fdr_threshold)
-)
+sig_path <- file.path(output_dir, sprintf("%s_sig_hits_FDR_%.2f.tsv", proj_name, fdr_threshold))
 write.table(sig_list, sig_path, sep = "\t", quote = FALSE, row.names = FALSE)
