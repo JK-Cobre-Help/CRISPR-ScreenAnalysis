@@ -90,13 +90,13 @@ stopifnot(ctrlname %in% names(gdata), treatname %in% names(gdata))
 # Simple QC: histogram of beta scores from the MLE gene summary.
 p1 <- ggplot(gdata, aes(x = .data[[ctrlname]])) +
   geom_histogram(bins = 50) +
-  theme_minimal() +
+  theme_bw() +
   labs(title = sprintf("Beta score distribution (%s vs %s)", treatname, ctrlname),
        x = "Beta", y = "Count")
 
 p2 <- ggplot(gdata, aes(x = .data[[treatname]])) +
   geom_histogram(bins = 50) +
-  theme_minimal() +
+  theme_bw() +
   labs(title = sprintf("Beta score distribution (%s vs %s)", treatname, ctrlname),
        x = "Beta", y = "Count")
 
@@ -188,23 +188,21 @@ write.table(sel_df, file.path(output_dir, sprintf("selection_table.norm_%s.tsv",
 cs <- countsummary
 if ("Label" %in% names(cs)) cs$Label <- gsub("_R[12]_001$", "", cs$Label)
 
+# gini index
 p_gini <- BarView(cs, x = "Label", y = "GiniIndex", ylab="Gini index", main="Evenness of sgRNA reads") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
-ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 8, height = 5, dpi = 150)
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = -1))
+ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 10, height = 8, dpi = 150)
 
-if ("Zerocounts" %in% names(cs)) {
-  cs$Missed <- log10(pmax(cs$Zerocounts, 1))  # avoid -Inf
-} else {
-  cs$Missed <- rep(NA_real_, nrow(cs))
-}
-
+# zero counts
 p_zero <- BarView(cs, x = "Label", y = "Missed", fill = "#394E80",
                   ylab="Log10 Zero Count sgRNAs", main="Missed sgRNAs") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
-ggsave(file.path(output_dir, "qc_zero_counts.png"), plot = p_zero, width = 8, height = 5, dpi = 150)
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = -1))
+ggsave(file.path(output_dir, "qc_zero_counts.png"), plot = p_zero, width = 10, height = 8, dpi = 150)
 
-p_map <- MapRatesView(cs)
-ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 8, height = 5, dpi = 150)
+# mapping rates
+p_map <- MapRatesView(cs) +
+  theme(axis.text.x = element_text(angle = 45, hjust = -1))
+ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 10, height = 8, dpi = 150)
 
 # -------------------------
 # Volcano (diff vs -log10 FDR)
@@ -245,7 +243,7 @@ p_beta_scatter <- ggplot(df_scatter, aes(
 top_lab <- df_scatter |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]])) |>
   dplyr::arrange(.data[[treat_fdr_col]]) |>
-  dplyr::slice_head(n = 50)
+  dplyr::slice_head(n = 30)
 
 p_beta_scatter_labeled <- p_beta_scatter +
   ggrepel::geom_text_repel(
@@ -259,16 +257,36 @@ ggsave(file.path(output_dir, "beta_scatter.png"), plot = p_beta_scatter, width =
 ggsave(file.path(output_dir, "beta_scatter_labeled.png"), plot = p_beta_scatter_labeled, width = 7, height = 6, dpi = 150)
 
 # -------------------------
-# Significant genes (by treatment FDR threshold)
+# Significant genes (filter by treatment FDR), include control FDR if present
 # -------------------------
-sig_cols <- c("Gene", ctrlname, treatname, "diff", treat_fdr_col)
+# Add control FDR to vol_df if we can find it
+if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(replicates)) {
+  vol_df <- merge(
+    vol_df,
+    replicates[, c("Gene", fdr_ctrl_col), drop = FALSE],
+    by = "Gene",
+    all.x = TRUE
+  )
+}
+
+# Build the list of columns to keep
+keep_cols <- c("Gene", ctrlname, treatname, "diff", treat_fdr_col)
+if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(vol_df)) {
+  keep_cols <- c(keep_cols, fdr_ctrl_col)
+}
+
 sig_list <- vol_df |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]]), .data[[treat_fdr_col]] <= fdr_threshold) |>
   dplyr::arrange(.data[[treat_fdr_col]]) |>
-  dplyr::select(all_of(sig_cols))
-names(sig_list)[names(sig_list) == ctrlname] <- paste0(ctrlname,  "_beta")
-names(sig_list)[names(sig_list) == treatname] <- paste0(treatname, "_beta")
+  dplyr::select(all_of(keep_cols))
+
+# Friendly column names
+names(sig_list)[names(sig_list) == ctrlname]      <- paste0(ctrlname,  "_beta")
+names(sig_list)[names(sig_list) == treatname]     <- paste0(treatname, "_beta")
 names(sig_list)[names(sig_list) == treat_fdr_col] <- paste0(treatname, "_FDR")
+if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(sig_list)) {
+  names(sig_list)[names(sig_list) == fdr_ctrl_col] <- paste0(ctrlname, "_FDR")
+}
 
 sig_path <- file.path(output_dir, sprintf("%s_sig_hits_FDR_%.2f.tsv", proj_name, fdr_threshold))
 write.table(sig_list, sig_path, sep = "\t", quote = FALSE, row.names = FALSE)
