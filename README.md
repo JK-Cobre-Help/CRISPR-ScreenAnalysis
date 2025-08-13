@@ -56,7 +56,7 @@
   + QC plots for Gini index, zero-count sgRNAs, and mapping rates
   + Produces selection tables of significantly enriched or depleted genes, filtered by configurable FDR threshold in the `config.yml`
 
-+ **Reproducible Configuratione**
++ **Reproducible Configuration**
   + All file paths, parameters, and tool versions are controlled in a single `config.yml`
   + Easily adapted for both CRISPR activation and knockout screens
 
@@ -64,7 +64,7 @@
 
 ## 2) Intended Use Case
 
-This workflow is intended for researchers performing **genome-wide** or **targeted CRISPR screens** who need an end-to-end, reproducible solution for data processing, statistical modeling, and visualization. It is particularly suited for use in Slurm-managed HPC environments where scalability and efficiency are essential.
+This workflow is intended for researchers performing **genome-wide** or **targeted CRISPR screens** who need an end-to-end, reproducible solution for data processing, statistical modeling, and visualization. It is suited for use in Slurm-managed HPC environments where scalability and efficiency are essential.
 
 It is ideal for researchers who want:  
 
@@ -215,7 +215,7 @@ N3_D14_PAC,/archive/kirkland/KLab21/22CCHNLT1/N3_D14_PAC_S30_R1_001.fastq.gz,/ar
 | **MAGeCK Counts** | `results/counts/*.count.txt` | Main sgRNA count table from `mageck count` |
 | **MAGeCK Count Summary** | `results/counts/*.countsummary.txt` | Summary statistics from `mageck count` |
 | **Design Matrix** | `results/mle/design_matrix.txt` *(or custom path)* | Auto-generated or user-supplied MAGeCK MLE design matrix |
-| **MLE-Dependent Outputs** | *____________________________________________________________* | **All outputs below are only generated if** `mle_enabled: true` in `config.yml` |
+| **MLE-Dependent Outputs** | *-* | **All outputs below are only generated if** `mle_enabled: true` in `config.yml` |
 | **MLE Results** | `results/mle/*.gene_summary.txt` | Gene-level β scores and FDRs from `mageck mle` |
 | **Selection Table** | `results/plots/selection_table.norm_<method>.tsv` | Table of positive/negative selected genes filtered by FDR threshold |
 | **Significant Hits Table** | `results/plots/<proj_name>_sig_hits_FDR_<thr>.tsv` | Final ranked list of significant genes based on β score and FDR |
