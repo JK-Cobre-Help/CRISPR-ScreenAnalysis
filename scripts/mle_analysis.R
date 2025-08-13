@@ -139,6 +139,19 @@ if (nm == "cell_cycle") {
 fdr_ctrl_col  <- guess_metric_col(ctrlname,  "fdr", names(replicates))
 fdr_treat_col <- guess_metric_col(treatname, "fdr", names(replicates))
 
+# sanity check the matched columns; stop early if we couldn't find them
+if (any(is.na(c(fdr_ctrl_col, fdr_treat_col)))) {
+  stop(sprintf(
+    "Could not locate FDR columns. Control match: %s | Treatment match: %s\nAvailable columns:\n  - %s",
+    ifelse(is.na(fdr_ctrl_col),  "NA", fdr_ctrl_col),
+    ifelse(is.na(fdr_treat_col), "NA", fdr_treat_col),
+    paste(names(replicates), collapse = "\n  - ")
+  ))
+}
+
+# (optional) print which columns we’ll use — super helpful for debugging
+message("Using FDR columns: ctrl=", fdr_ctrl_col, " | treat=", fdr_treat_col)
+
 # Start with betas (possibly normalized) and diff (treat - ctrl)
 sel_df <- tibble::tibble(
   Gene = gsel$Gene,
