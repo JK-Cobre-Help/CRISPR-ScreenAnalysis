@@ -23,6 +23,7 @@ output_dir <- args[4]
 proj_name <- args[5]
 organism <- args[6]
 norm_method <- args[7]
+fdr_threshold <- as.numeric(args[8])
 
 # -------------------------
 # Ensure output directory exists
@@ -214,3 +215,77 @@ ggsave(file.path(output_dir, "beta_scatter.png"),
 ggsave(file.path(output_dir, "beta_scatter_labeled.png"),
        plot = p_beta_scatter_labeled, width = 8, height = 8, dpi = 150)
               
+# =========================
+# QC plots from countsummary
+# =========================
+cs <- countsummary
+
+# clean labels if needed (be permissive about R1/R2 suffix)
+if ("Label" %in% names(cs)) {
+  cs$Label <- gsub("_R[12]_001$", "", cs$Label)
+}
+
+# Gini index
+p_gini <- BarView(cs, x = "Label", y = "GiniIndex",
+                  ylab = "Gini index", main = "Evenness of sgRNA reads") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
+ggsave(file.path(output_dir, "qc_gini.png"), plot = p_gini, width = 8, height = 5, dpi = 150)
+
+# Zero-count sgRNAs (log10)
+if ("Zerocounts" %in% names(cs)) {
+  cs$Missed <- log10(pmax(cs$Zerocounts, 1))  # avoid -Inf
+  p_zero <- BarView(cs, x = "Label", y = "Missed", fill = "#394E80",
+                    ylab = "Log10 Zero Count sgRNAs", main = "Missed sgRNAs") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
+  ggsave(file.path(output_dir, "qc_zero_counts.png"), plot = p_zero, width = 8, height = 5, dpi = 150)
+}
+
+# Percent mapped / rates
+# (MapRatesView is provided by MAGeCKFlute; it expects standard columns from countsummary)
+p_map <- MapRatesView(cs)
+ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 8, height = 5, dpi = 150)
+
+# =========================
+# Volcano plot (diff vs -log10(FDR))
+# =========================
+treat_fdr_col <- paste0(treatname, ".fdr")
+
+vol_df <- merge(
+  gsel[, c("Gene", ctrlname, treatname)],   # betas from chosen normalization
+  replicates[, c("Gene", treat_fdr_col)],   # treatment FDR from MLE gene summary
+  by = "Gene", all.x = TRUE
+)
+vol_df$diff   <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
+vol_df$LogFDR <- -log10(vol_df[[treat_fdr_col]])
+
+p_vol <- ScatterView(vol_df, x = "diff", y = "LogFDR", label = "Gene",
+                     model = "volcano", top = 10) +
+         ggtitle(sprintf("Volcano: %s (norm=%s)", paste(treatname, "vs", ctrlname), tolower(norm_method)))
+ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
+       plot = p_vol, width = 8, height = 6, dpi = 150)
+
+# =========================
+# Significant gene list (by treatment FDR)
+# =========================
+fdr_threshold <- 0.10
+
+sig_cols <- c(
+  "Gene", ctrlname, treatname, "diff", treat_fdr_col
+)
+
+sig_list <- vol_df |>
+  dplyr::filter(!is.na(.data[[treat_fdr_col]]),
+                .data[[treat_fdr_col]] <= fdr_threshold) |>
+  dplyr::arrange(.data[[treat_fdr_col]]) |>
+  dplyr::select(all_of(sig_cols))
+
+# Friendlier column names for the output table
+names(sig_list)[names(sig_list) == ctrlname]       <- paste0(ctrlname,  "_beta")
+names(sig_list)[names(sig_list) == treatname]      <- paste0(treatname, "_beta")
+names(sig_list)[names(sig_list) == treat_fdr_col]  <- paste0(treatname, "_FDR")
+
+sig_path <- file.path(
+  output_dir,
+  sprintf("%s_sig_hits_FDR_%.2f.tsv", proj_name, fdr_threshold)
+)
+write.table(sig_list, sig_path, sep = "\t", quote = FALSE, row.names = FALSE)
