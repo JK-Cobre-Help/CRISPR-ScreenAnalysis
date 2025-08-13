@@ -23,6 +23,7 @@ custom_design_matrix: ""   # e.g. "resources/my_design.txt" to bypass auto-build
 proj_name: "CalabreseA"
 organism: "hsa"            # can also 
 norm_method: "none"        # optional; can be "cc" or "loess"
+fdr_threshold: 0.10
 
 ## environment modules
 fastqc: "fastqc/0.12.1"
