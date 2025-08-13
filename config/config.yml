@@ -8,7 +8,7 @@ stage_fastqs: false
 mageck_paired: false
 
 ## path to sgRNA library
-sgRNA_library: "resources/calabreseA_library.txt"
+sgRNA_library: "resources/calabreseA_library.txt"         # for ko library use: "resources/brunelloKO_library.txt"
 
 ## One counts file for all samples:
 counts_prefix: "sample1"
@@ -16,7 +16,7 @@ counts_prefix: "sample1"
 ## MAGeCK MLE Settings
 mle_enabled: true
 mle_prefix: "CalabreseA"
-mle_control_sgrna: ""      # optional; leave blank for none
+mle_control_sgrna: ""      # optional; leave blank for none or use "calabreseA_nonTargeting.txt" / "brunelloKO_nonTargeting.txt"
 custom_design_matrix: ""   # e.g. "resources/my_design.txt" to bypass auto-build
 
 ## MAGeCK Flute Settings
