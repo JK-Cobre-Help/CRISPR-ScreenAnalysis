@@ -167,11 +167,13 @@ The `samples.csv` file defines all input samples and their associated metadata.
 | `factor`       | Experimental condition label for the sample. Use `none` for baseline/control samples; other values should be short condition names (no spaces). |
 
 ### Rules for Valid Entries
-+ **Unique `sample` values** – duplicate names will overwrite outputs and break downstream steps.  
++ **Unique `sample` values** – duplicate names will overwrite outputs and break downstream steps. Do not use the exact same name as factor.    
 + **Case-sensitive paths** – ensure `fastq1` and `fastq2` match the exact case of filenames on disk.  
 + **Boolean formatting** – `include_mle` must be one of: `true`, `false`, `1`, `0`, `yes`, `no` (case-insensitive).  
-+ **Factor naming** – avoid spaces; use underscores or short identifiers (e.g., `D4_DMSO`, `D14_PAC`, etc.).  
++ **Factor naming** – avoid spaces; use underscores or short identifiers (e.g., `D4_DMSO`, `D14_PAC`, etc.). Do not use the exact same name as sample name.  
 + **Baseline handling** – only one factor should be set to `none`; all other conditions will be encoded relative to this baseline in the design matrix.  
+
+**Important:** The `factor` value must not be identical to the `sample` name to avoid conflicts in downstream analysis.
 
 ### Example: Paired-End Design
 **Note**: Even if paired-end file paths are provided the workflow can still be run as single-end.  
