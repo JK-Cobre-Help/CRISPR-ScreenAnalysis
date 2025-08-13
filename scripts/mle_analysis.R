@@ -40,50 +40,27 @@ replicates <- read.table(gene_summary, header = TRUE, sep = "\t", check.names = 
 countsummary <- read.table(count_summary, header = TRUE, sep = "\t", check.names = FALSE)
 design <- read.table(design_file, header = TRUE, sep = "\t", check.names = FALSE)
 
-# Escape regex specials in a literal string
-escape_regex <- function(x) gsub("([][{}()+*^$.|\\?\\-])", "\\\\\\1", x)
+# -------------------------
+# Figure out ctrl/treat from design
+# -------------------------
+cols <- setdiff(colnames(design), c("group","baseline"))
+if (length(cols) < 2) stop("Design matrix must contain at least two factor columns (excluding 'baseline').")
+ctrlname  <- cols[1]
+treatname <- cols[length(cols)]
 
-# Find "<prefix><sep>metric" where sep can be ".", "_", "-", or "|", case-insensitive
+# -------------------------
+# Helpers for tolerant column matching (.|_|-||)
+# -------------------------
+escape_regex <- function(x) gsub("([][{}()+*^$.|\\?\\-])", "\\\\\\1", x)
 guess_metric_col <- function(prefix, metric, cols) {
-  # exact case-insensitive match of "prefix|metric" (or with other seps)
-  # build a regex: ^prefix([._\\-|])?metric$
   pat <- paste0("^", escape_regex(prefix), "([._\\-|])?", escape_regex(metric), "$")
   cand <- grep(pat, cols, ignore.case = TRUE, value = TRUE)
   if (length(cand)) return(cand[1])
-
-  # fallback: anything ending with metric (rarely needed, but keeps us resilient)
   tail_pat <- paste0("([._\\-|])", escape_regex(metric), "$")
   cand2 <- grep(tail_pat, cols, ignore.case = TRUE, value = TRUE)
   if (length(cand2)) return(cand2[1])
-
   NA_character_
 }
-
-all_cols <- names(replicates)
-
-# Robustly locate FDR columns for control/treatment
-fdr_ctrl_col  <- guess_metric_col(ctrlname,  "fdr", all_cols)
-fdr_treat_col <- guess_metric_col(treatname, "fdr", all_cols)
-
-if (is.na(fdr_treat_col)) {
-  stop(
-    "Could not find treatment FDR column for '", treatname, "'.\n",
-    "Tried separators one of: '.', '_', '-', '|'.\n",
-    "Available columns include:\n  - ", paste(all_cols, collapse = "\n  - ")
-  )
-}
-
-# -------------------------
-# Derive treat/ctrl from design matrix
-# (exclude 'group' and 'baseline'; use remaining factor columns in order)
-# -------------------------
-cols <- setdiff(colnames(design), c("group","baseline"))
-if (length(cols) < 2) {
-  stop("Design matrix must contain at least two factor columns (excluding 'baseline').")
-}
-# Convention: first factor column = control, last factor column = treatment
-ctrlname <- cols[1]
-treatname <- cols[length(cols)]
 
 # -------------------------
 # Run MAGeCK Flute MLE
@@ -159,8 +136,8 @@ if (nm == "cell_cycle") {
 # Build positive/negative selection table
 # -------------------------
 # Dynamic FDR column names in the gene_summary:
-fdr_ctrl_col  <- guess_metric_col(ctrlname,  "fdr", names(gdata1))
-fdr_treat_col <- guess_metric_col(treatname, "fdr", names(gdata1))
+fdr_ctrl_col  <- guess_metric_col(ctrlname,  "fdr", names(replicates))
+fdr_treat_col <- guess_metric_col(treatname, "fdr", names(replicates))
 
 # Start with betas (possibly normalized) and diff (treat - ctrl)
 sel_df <- tibble::tibble(
