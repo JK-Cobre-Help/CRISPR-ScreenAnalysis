@@ -393,7 +393,7 @@ if MLE_ENABLED:
             qc_zero_counts = f"{OUT_DIR}/qc_zero_counts.png",
             qc_maprates = f"{OUT_DIR}/qc_maprates.png",
             volcano = f"{OUT_DIR}/volcano_diff_vs_neglog10FDR.png",
-            selection_table = f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv"
+            selection_table = f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv",
             sig_hits = f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"
         params:
             out_dir = OUT_DIR,
