@@ -273,7 +273,7 @@ ggsave(file.path(output_dir, "beta_scatter_labeled.png"), plot = p_beta_scatter_
 # -------------------------
 # Significant genes (filter by treatment FDR), include control FDR if present
 # -------------------------
-# Add control FDR to vol_df if we can find it
+# Add control FDR to vol_df if available
 if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(replicates)) {
   vol_df <- merge(
     vol_df,
@@ -283,25 +283,35 @@ if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(replicates)) {
   )
 }
 
-# Build the list of columns to keep
-keep_cols <- c("Gene", ctrlname, treatname, "diff", treat_fdr_col)
-if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(vol_df)) {
-  keep_cols <- c(keep_cols, fdr_ctrl_col)
-}
-
+# Add |Δβ| and sort by effect then FDR
 sig_list <- vol_df |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]]), .data[[treat_fdr_col]] <= fdr_threshold) |>
   dplyr::mutate(effect_abs = abs(diff)) |>
-  dplyr::arrange(dplyr::desc(effect_abs), .data[[treat_fdr_col]]) |>
-  dplyr::select(all_of(keep_cols))
+  dplyr::arrange(dplyr::desc(effect_abs), .data[[treat_fdr_col]])
 
-# Friendly column names
-names(sig_list)[names(sig_list) == ctrlname] <- paste0(ctrlname,  "_beta")
-names(sig_list)[names(sig_list) == treatname] <- paste0(treatname, "_beta")
-names(sig_list)[names(sig_list) == treat_fdr_col] <- paste0(treatname, "_FDR")
+# Friendly column names for output
+treat_fdr_out <- paste0(treatname, "_FDR")
+ctrl_fdr_out  <- paste0(ctrlname,  "_FDR")
+
+names(sig_list)[names(sig_list) == ctrlname]        <- paste0(ctrlname,  "_beta")
+names(sig_list)[names(sig_list) == treatname]       <- paste0(treatname, "_beta")
+names(sig_list)[names(sig_list) == treat_fdr_col]   <- treat_fdr_out
 if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(sig_list)) {
-  names(sig_list)[names(sig_list) == fdr_ctrl_col] <- paste0(ctrlname, "_FDR")
+  names(sig_list)[names(sig_list) == fdr_ctrl_col] <- ctrl_fdr_out
 }
+
+# Final column order (includes |Δβ|)
+keep_cols <- c(
+  "Gene",
+  paste0(ctrlname,  "_beta"),
+  paste0(treatname, "_beta"),
+  "diff",
+  "effect_abs",
+  treat_fdr_out
+)
+if (ctrl_fdr_out %in% names(sig_list)) keep_cols <- c(keep_cols, ctrl_fdr_out)
+
+sig_list <- sig_list[, keep_cols, drop = FALSE]
 
 sig_path <- file.path(output_dir, sprintf("%s_sig_hits_FDR_%.2f.tsv", proj_name, fdr_threshold))
 write.table(sig_list, sig_path, sep = "\t", quote = FALSE, row.names = FALSE)
