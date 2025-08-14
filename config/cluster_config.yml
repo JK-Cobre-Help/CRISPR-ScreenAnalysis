@@ -37,6 +37,14 @@ stage_fastqs:
   output: results/logs/{rule}.{wildcards.sample}.out
   error: results/logs/{rule}.{wildcards.sample}.err
 
+cleanup_staged_fastqs:
+  cpus-per-task: 1
+  mem: 1G
+  time: "00:10:00"
+  name: "{rule}"
+  output: "results/logs/{rule}.out"
+  error:  "results/logs/{rule}.err"
+  
 # ------------------------------------------------------------------------------
 # Mageck Count
 # ------------------------------------------------------------------------------
