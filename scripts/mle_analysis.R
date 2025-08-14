@@ -220,29 +220,44 @@ ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 10, heigh
 # Volcano (diff vs -log10 FDR)
 # -------------------------
 treat_fdr_col <- fdr_treat_col
+
+# Base dataframe: betas + FDR
 vol_df <- merge(
   gsel[, c("Gene", ctrlname, treatname)],
   replicates[, c("Gene", treat_fdr_col)],
   by = "Gene", all.x = TRUE
 )
-vol_df$diff   <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
-vol_df$LogFDR <- -log10(as.numeric(vol_df[[treat_fdr_col]]))
-vol_df$LogFDR[!is.finite(vol_df$LogFDR)] <- -log10(.Machine$double.xmin)
-p_vol <- ScatterView(vol_df, x="diff", y="LogFDR", label="Gene", model="volcano", top=20) +
-  ggtitle(sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold))
-ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"), plot = p_vol, width = 8, height = 6, dpi = 150)
+
+# Effect size and robust FDR transforms
+vol_df$diff     <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
+vol_df$FDR_num  <- suppressWarnings(as.numeric(vol_df[[treat_fdr_col]]))
+vol_df$LogFDR   <- -log10(pmax(vol_df$FDR_num, .Machine$double.xmin))
+
+# Keep rows with finite values
+vol_df <- vol_df[is.finite(vol_df$diff) & is.finite(vol_df$LogFDR), , drop = FALSE]
+
+## --- MAGeCKFlute volcano (kept for reference; saved with distinct name) ---
+p_vol_flute <- ScatterView(vol_df, x = "diff", y = "LogFDR", label = "Gene",
+                           model = "volcano", top = 20) +
+  ggtitle(sprintf("Volcano (Flute): %s vs %s (norm=%s, FDR≤%.2f)",
+                  treatname, ctrlname, nm, fdr_threshold))
+ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
+       plot = p_vol_flute, width = 8, height = 6, dpi = 150)
 
 # -------------------------
-# Custom Volcano (diff vs -log10 FDR)
+# Custom Volcano (diff vs -log10 FDR) with threshold lines and labels
 # -------------------------
-# pick top N genes to label (by FDR then |Δβ|)
+# Top genes to label (best FDR, then largest |Δβ|)
 top_lab <- vol_df |>
-  dplyr::filter(!is.na(.data[[treat_fdr_col]])) |>
-  dplyr::arrange(.data[[treat_fdr_col]], dplyr::desc(abs(diff))) |>
+  dplyr::arrange(FDR_num, dplyr::desc(abs(diff))) |>
   dplyr::slice_head(n = 20)
 
-p_vol <- ggplot(vol_df, aes(x = diff, y = LogFDR, color = .data[[treat_fdr_col]])) +
-  geom_point(alpha = 0.8, size = 1.6) +
+p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR, color = LogFDR)) +
+  geom_point(alpha = 0.85, size = 1.6, na.rm = TRUE) +
+  # threshold lines
+  geom_hline(yintercept = -log10(fdr_threshold), linetype = "dotted", color = "grey40") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey70") +
+  # labels
   ggrepel::geom_text_repel(
     data = top_lab,
     aes(label = Gene),
@@ -252,12 +267,12 @@ p_vol <- ggplot(vol_df, aes(x = diff, y = LogFDR, color = .data[[treat_fdr_col]]
   theme_bw() +
   labs(
     title = sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold),
-    x = "Δβ (treat - ctrl)", y = "-log10(FDR)", color = paste0(treatname, " FDR")
+    x = "Δβ (treat - ctrl)", y = "-log10(FDR)", color = "-log10(FDR)"
   ) +
-  scale_colour_gradient(low = "#ff7f00", high = "#7570b3", na.value = "grey80")
+  scale_colour_gradient(low = "#ff7f00", high = "#7570b3")
 
-ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
-       plot = p_vol, width = 8, height = 6, dpi = 150)
+ggsave(file.path(output_dir, "custom_volcano_diff_vs_neglog10FDR.png"),
+       plot = p_vol_custom, width = 8, height = 6, dpi = 150)
 
 # -------------------------
 # Beta vs Beta scatter (color = treatment FDR) top-30 labeled
