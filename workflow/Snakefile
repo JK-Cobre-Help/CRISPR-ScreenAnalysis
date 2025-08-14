@@ -52,6 +52,7 @@ import pandas as pd
 
 # read the CSV file and set an index using the values in the "sample" column.
 samples_table = pd.read_csv("config/samples.csv").set_index("sample", drop=False)
+samples_table["fastq2"] = samples_table["fastq2"].fillna("").astype(str)
 
 # fastq filename input function definition set to Python dictionary
 def fq_dict_from_sample(wildcards):
@@ -147,6 +148,8 @@ NORM_METHOD_STR = str(config["norm_method"]).lower()
 rule all:
     input:
         expand("results/qc/fastqc/{sample}_R1_fastqc.html", sample=samples_table.index),
+        *([expand("results/qc/fastqc/{sample}_R2_fastqc.html", sample=samples_table.index)]
+          if run_mageck_paired else []),
         "results/qc/multiqc/multiqc_report.html",
         f"{COUNTS_PREFIX}.count.txt",
         f"{COUNTS_PREFIX}.countsummary.txt",
@@ -167,59 +170,87 @@ rule all:
 ##                       Quality Control                        ##
 ##################################################################
 
-# run fastqc on fastq.gz files before trimming
-rule fastqc_raw:
-    input:
-        unpack(fq_dict_from_sample)
-    output:
-        html1="results/qc/fastqc/{sample}_R1_fastqc.html",
-        zip1="results/qc/fastqc/{sample}_R1_fastqc.zip",
-        html2="results/qc/fastqc/{sample}_R2_fastqc.html",
-        zip2="results/qc/fastqc/{sample}_R2_fastqc.zip"
-    envmodules:
-        config["fastqc"]
-    threads: 4
-    log: "results/logs/fastqc_{sample}.log"
-    shell:
-        """
-        # Run FastQC with output directed to writable folder
-        fastqc --threads {threads} -o results/qc/fastqc {input.fq1}
-        fastqc --threads {threads} -o results/qc/fastqc {input.fq2}
+if run_mageck_paired:
+    rule fastqc_raw:
+        input:
+            unpack(fq_dict_from_sample)
+        output:
+            html1="results/qc/fastqc/{sample}_R1_fastqc.html",
+            zip1 ="results/qc/fastqc/{sample}_R1_fastqc.zip",
+            html2="results/qc/fastqc/{sample}_R2_fastqc.html",
+            zip2 ="results/qc/fastqc/{sample}_R2_fastqc.zip"
+        envmodules:
+            config["fastqc"]
+        threads: 4
+        log: "results/logs/fastqc_{sample}.log"
+        shell:
+            """
+            fastqc --threads {threads} -o results/qc/fastqc {input.fq1}
+            fastqc --threads {threads} -o results/qc/fastqc {input.fq2}
 
-        # Rename output files to match specified output paths
-        dir="results/qc/fastqc"
-        bsename=$(basename {input.fq1} .gz)
-        bsename=$(basename ${{bsename}} .fastq)
-        mv ${{dir}}/${{bsename}}_fastqc.html {output.html1}
-        mv ${{dir}}/${{bsename}}_fastqc.zip {output.zip1}
-        
-        bsename=$(basename {input.fq2} .gz)
-        bsename=$(basename ${{bsename}} .fastq)
-        mv ${{dir}}/${{bsename}}_fastqc.html {output.html2}
-        mv ${{dir}}/${{bsename}}_fastqc.zip {output.zip2}
-        """
+            dir="results/qc/fastqc"
+            bsename=$(basename {input.fq1} .gz); bsename=$(basename ${{bsename}} .fastq)
+            mv ${{dir}}/${{bsename}}_fastqc.html {output.html1}
+            mv ${{dir}}/${{bsename}}_fastqc.zip  {output.zip1}
 
-##################################################################
-##                     Multiqc on Raw Fastqs                    ##
-##################################################################
+            bsename=$(basename {input.fq2} .gz); bsename=$(basename ${{bsename}} .fastq)
+            mv ${{dir}}/${{bsename}}_fastqc.html {output.html2}
+            mv ${{dir}}/${{bsename}}_fastqc.zip  {output.zip2}
+            """
 
-rule multiqc_raw:
-    input:
-        expand("results/qc/fastqc/{sample}_R1_fastqc.zip", sample=samples_table.index),
-        expand("results/qc/fastqc/{sample}_R2_fastqc.zip", sample=samples_table.index)
-    output:
-        "results/qc/multiqc/multiqc_report.html"
-    params:
-        outdir="results/qc/multiqc"
-    envmodules:
-        config["multiqc"]
-    threads: 2
-    log:
-        "results/logs/multiqc.log"
-    shell:
-        """
-        multiqc results/qc/fastqc -o {params.outdir} 2> {log}
-        """
+    rule multiqc_raw:
+        input:
+            expand("results/qc/fastqc/{sample}_R1_fastqc.zip", sample=samples_table.index),
+            expand("results/qc/fastqc/{sample}_R2_fastqc.zip", sample=samples_table.index)
+        output:
+            "results/qc/multiqc/multiqc_report.html"
+        params:
+            outdir="results/qc/multiqc"
+        envmodules:
+            config["multiqc"]
+        threads: 2
+        log: "results/logs/multiqc.log"
+        shell:
+            """
+            multiqc results/qc/fastqc -o {params.outdir} 2> {log}
+            """
+
+else:
+    rule fastqc_raw:
+        input:
+            unpack(lambda wc: {"fq1": samples_table.loc[wc.sample, "fastq1"]})
+        output:
+            html1="results/qc/fastqc/{sample}_R1_fastqc.html",
+            zip1 ="results/qc/fastqc/{sample}_R1_fastqc.zip"
+        envmodules:
+            config["fastqc"]
+        threads: 4
+        log: "results/logs/fastqc_{sample}.log"
+        shell:
+            """
+            fastqc --threads {threads} -o results/qc/fastqc {input.fq1}
+
+            dir="results/qc/fastqc"
+            bsename=$(basename {input.fq1} .gz); bsename=$(basename ${{bsename}} .fastq)
+            mv ${{dir}}/${{bsename}}_fastqc.html {output.html1}
+            mv ${{dir}}/${{bsename}}_fastqc.zip  {output.zip1}
+            """
+
+    rule multiqc_raw:
+        input:
+            expand("results/qc/fastqc/{sample}_R1_fastqc.zip", sample=samples_table.index)
+        output:
+            "results/qc/multiqc/multiqc_report.html"
+        params:
+            outdir="results/qc/multiqc"
+        envmodules:
+            config["multiqc"]
+        threads: 2
+        log: "results/logs/multiqc.log"
+        shell:
+            """
+            multiqc results/qc/fastqc -o {params.outdir} 2> {log}
+            """
 
 ##################################################################
 ##                         Stage FASTQs                         ##
