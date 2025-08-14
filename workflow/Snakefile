@@ -457,7 +457,9 @@ if MLE_ENABLED:
             proj_name = PROJ_NAME,
             organism = config["organism"],
             norm_method = config["norm_method"],
-            fdr_threshold = FDR_THR
+            fdr_threshold = FDR_THR,
+            y_cap = config["y_cap"],
+            effect_thr = config["effect_thr"]
         envmodules:
             config["R"],
             config["bioconductor"]
@@ -470,6 +472,7 @@ if MLE_ENABLED:
               "{input.gene_summary}" "{input.count_summary}" "{input.design}" \
               "{params.out_dir}" "{params.proj_name}" "{params.organism}" \
               "{params.norm_method}" "{params.fdr_threshold}" \
+              "{params.y_cap}" "{params.effect_thr}" \
               2> {log}
             """
 
