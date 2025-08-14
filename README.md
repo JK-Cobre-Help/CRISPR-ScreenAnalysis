@@ -81,17 +81,21 @@ It is ideal for researchers who want:
 All tool versions, paths, configurations, and parameters are defined in `config/config.yml`.  
 
 ### Key Configuration Fields
-| Field                  | Description                                               | Example                            |
-|------------------------|-----------------------------------------------------------|------------------------------------|
-| `samples_csv`          | Path to `samples.csv` with all input samples and metadata | `config/samples.csv`               |
-| `stage_fastqs`         | Copy FASTQs to local storage before processing            | `true`                             |
-| `mageck_paired`        | Set to `true` for paired-end sequencing                   | `false`                            |
-| `sgRNA_library`        | Path to sgRNA reference library                           | `resources/calabreseA_library.txt` |
-| `counts_prefix`        | Output name for count files                               | `sample1`                          |
-| `mle_enabled`          | Enable or disable MAGeCK MLE step                         | `true`                             |
-| `mle_prefix`           | Output name for MLE results                               | `CalabreseA`                       |
-| `mle_control_sgrna`    | Path to optional control sgRNA file                       | `""`                               |
-| `custom_design_matrix` | Path to a user-supplied design matrix (skip auto-build)   | `""`                               |
+| Field                  | Description                                                  | Example                                         |
+|------------------------|--------------------------------------------------------------|-------------------------------------------------|
+| `samples_csv`          | Path to `samples.csv` with all input samples and metadata    | `config/samples.csv`                            |
+| `stage_fastqs`         | Copy FASTQs to local storage before processing               | `true`                                          |
+| `mageck_paired`        | Set to `true` for paired-end sequencing                      | `false`                                         |
+| `sgRNA_library`        | Path to sgRNA reference library                              | `resources/calabreseA_library.txt`              |
+| `counts_prefix`        | Output name for count files                                  | `sample1`                                       |
+| `mle_enabled`          | Enable or disable MAGeCK MLE step                            | `true`                                          |
+| `mle_prefix`           | Output name for MLE results                                  | `CalabreseA`                                    |
+| `mle_control_sgrna`    | Path to optional control sgRNA file (blank for none)         | `resources/calabreseA_nonTargeting.txt` or `""` |
+| `custom_design_matrix` | Path to user-supplied design matrix (skip auto-build)        | `resources/example_design_matrix.txt` or `""`   |
+| `proj_name`            | Project name prefix for MAGeCKFlute outputs                  | `CalabreseA`                                    |
+| `organism`             | Organism code for MAGeCKFlute enrichment analysis            | `hsa`                                           |
+| `norm_method`          | Normalization method for MAGeCKFlute                         | `none`, `cc`, or `loess`                        |
+| `fdr_threshold`        | FDR cutoff for significant genes in MAGeCKFlute plots/tables | `0.10`                                          |
 
 Example `config.yml`:
 ```yaml
@@ -104,6 +108,10 @@ mle_enabled: true
 mle_prefix: "CalabreseA"
 mle_control_sgrna: ""
 custom_design_matrix: ""
+proj_name: "CalabreseA"
+organism: "hsa"
+norm_method: "none"
+fdr_threshold: 0.10
 ```
 
 ---
