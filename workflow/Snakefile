@@ -159,7 +159,8 @@ rule all:
         *([f"{OUT_DIR}/qc_zero_counts.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/qc_maprates.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv"] if MLE_ENABLED else []),
-        *([f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"] if MLE_ENABLED else [])
+        *([f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"] if MLE_ENABLED else []),
+        *(["results/logs/stage_fastqs.cleaned"] if STAGE else [])
 
 ##################################################################
 ##                       Quality Control                        ##
@@ -226,20 +227,10 @@ rule multiqc_raw:
 if STAGE:
     STAGE_DIR = "results/staged_fastqs"
 
-    # 1) Explicit temp directory target
-    rule stage_fastqs_dir:
-        output:
-            dir = temp(directory(STAGE_DIR))
-        shell:
-            """
-            mkdir -p {output.dir}
-            """
-
-    # 2) Per-sample staging depends on the dir target
+    # Per-sample staging
     rule stage_fastqs:
         input:
-            unpack(fq_dict_from_sample),
-            dir = rules.stage_fastqs_dir.output.dir
+            unpack(fq_dict_from_sample)
         output:
             temporary_fq1 = temp(f"{STAGE_DIR}/{{sample}}_R1_staged.fastq.gz"),
             temporary_fq2 = temp(f"{STAGE_DIR}/{{sample}}_R2_staged.fastq.gz")
@@ -248,8 +239,28 @@ if STAGE:
             "results/logs/staged_{sample}.log"
         shell:
             """
+            # R1 is required
             cp -f {input.fq1} {output.temporary_fq1}
-            cp -f {input.fq2} {output.temporary_fq2}
+
+            # R2 is optional (single-end friendly). If missing, create an empty placeholder
+            if [ -n "{input.fq2}" ] && [ -e "{input.fq2}" ]; then
+              cp -f {input.fq2} {output.temporary_fq2}
+            else
+              : > {output.temporary_fq2}
+            fi
+            """
+
+    rule cleanup_staged_fastqs:
+        input:
+          expand(f"{STAGE_DIR}/{{sample}}_R1_staged.fastq.gz", sample=samples_table.index),
+          expand(f"{STAGE_DIR}/{{sample}}_R2_staged.fastq.gz", sample=samples_table.index)
+        output:
+          touch("results/logs/stage_fastqs.cleaned")
+        shell:
+            """
+            if [ -d "{STAGE_DIR}" ] && [ -z "$(ls -A {STAGE_DIR} 2>/dev/null)" ]; then
+              rmdir "{STAGE_DIR}"
+            fi
             """
 
 ##################################################################
