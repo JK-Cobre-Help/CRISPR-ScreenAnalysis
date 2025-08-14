@@ -228,10 +228,36 @@ vol_df <- merge(
 vol_df$diff   <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
 vol_df$LogFDR <- -log10(as.numeric(vol_df[[treat_fdr_col]]))
 vol_df$LogFDR[!is.finite(vol_df$LogFDR)] <- -log10(.Machine$double.xmin)
-p_vol <- ScatterView(vol_df, x="diff", y="LogFDR", label="Gene", model="volcano", top=10) +
-  scale_colour_gradient(low = "#ff7f00", high = "#7570b3", na.value = "grey80") +
+p_vol <- ScatterView(vol_df, x="diff", y="LogFDR", label="Gene", model="volcano", top=20) +
   ggtitle(sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold))
 ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"), plot = p_vol, width = 8, height = 6, dpi = 150)
+
+# -------------------------
+# Custom Volcano (diff vs -log10 FDR)
+# -------------------------
+# pick top N genes to label (by FDR then |Δβ|)
+top_lab <- vol_df |>
+  dplyr::filter(!is.na(.data[[treat_fdr_col]])) |>
+  dplyr::arrange(.data[[treat_fdr_col]], dplyr::desc(abs(diff))) |>
+  dplyr::slice_head(n = 20)
+
+p_vol <- ggplot(vol_df, aes(x = diff, y = LogFDR, color = .data[[treat_fdr_col]])) +
+  geom_point(alpha = 0.8, size = 1.6) +
+  ggrepel::geom_text_repel(
+    data = top_lab,
+    aes(label = Gene),
+    size = 2.5, max.overlaps = 100, box.padding = 0.3,
+    point.padding = 0.2, segment.size = 0.2, show.legend = FALSE
+  ) +
+  theme_bw() +
+  labs(
+    title = sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold),
+    x = "Δβ (treat - ctrl)", y = "-log10(FDR)", color = paste0(treatname, " FDR")
+  ) +
+  scale_colour_gradient(low = "#ff7f00", high = "#7570b3", na.value = "grey80")
+
+ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
+       plot = p_vol, width = 8, height = 6, dpi = 150)
 
 # -------------------------
 # Beta vs Beta scatter (color = treatment FDR) top-30 labeled
