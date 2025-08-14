@@ -242,7 +242,9 @@ p_beta_scatter <- ggplot(df_scatter, aes(
 
 top_lab <- df_scatter |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]])) |>
-  dplyr::arrange(.data[[treat_fdr_col]]) |>
+  dplyr::mutate(delta_beta = .data[[treatname]] - .data[[ctrlname]],
+                effect_abs = abs(delta_beta)) |>
+  dplyr::arrange(.data[[treat_fdr_col]], dplyr::desc(effect_abs)) |>
   dplyr::slice_head(n = 30)
 
 p_beta_scatter_labeled <- p_beta_scatter +
