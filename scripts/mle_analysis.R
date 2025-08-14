@@ -234,7 +234,7 @@ p_vol <- ScatterView(vol_df, x="diff", y="LogFDR", label="Gene", model="volcano"
 ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"), plot = p_vol, width = 8, height = 6, dpi = 150)
 
 # -------------------------
-# Beta vs Beta scatter (color = treatment FDR) top-50 labeled
+# Beta vs Beta scatter (color = treatment FDR) top-30 labeled
 # -------------------------
 df_scatter <- merge(
   gsel[, c("Gene", ctrlname, treatname)],
