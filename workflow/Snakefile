@@ -253,8 +253,7 @@ if STAGE:
 
     rule cleanup_staged_fastqs:
         input:
-          expand(f"{STAGE_DIR}/{{sample}}_R1_staged.fastq.gz", sample=samples_table.index),
-          expand(f"{STAGE_DIR}/{{sample}}_R2_staged.fastq.gz", sample=samples_table.index)
+          f"{COUNTS_PREFIX}.countsummary.txt"
         output:
           touch("results/logs/stage_fastqs.cleaned")
         shell:
