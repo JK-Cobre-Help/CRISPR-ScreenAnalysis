@@ -323,7 +323,7 @@ sbatch --wrap="snakemake -j 999 --use-envmodules --rerun-incomplete --latency-wa
 
 ## 11) Authorship & Contributions
 
-+ **Kevin A. Boyd** – Designed and implemented the Snakemake workflow for a Slurm-managed HPC environment, modularized the pipeline structure, implemented all processing steps, integrated peak consensus method, designed plots, and created the documentation.  
++ **Kevin A. Boyd** – Designed and implemented the Snakemake workflow for a Slurm-managed HPC environment, modularized the pipeline structure, implemented all processing steps, designed custom volcano/beta score plots, and created the documentation.  
 + **Jacob Kirkland** – Principal Investigator; provided experimental data and validation of activation screen logic.
 + **Christopher L. Sansam** – Principal Investigator; provided additional experimental data and validation of knockout screen logic.  
 
