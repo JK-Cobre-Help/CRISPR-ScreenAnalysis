@@ -16,7 +16,7 @@ counts_prefix: "sample1"
 ## MAGeCK MLE Settings
 mle_enabled: true
 mle_prefix: "CalabreseA"
-mle_control_sgrna: ""      # optional; leave blank for none or use "calabreseA_nonTargeting.txt" / "brunelloKO_nonTargeting.txt"
+mle_control_sgrna: ""      # optional; leave blank for none or use "resources/calabreseA_nonTargeting.txt" | "resources/brunelloKO_nonTargeting.txt"
 custom_design_matrix: ""   # e.g. "resources/my_design.txt" to bypass auto-build
 
 ## MAGeCK Flute Settings
