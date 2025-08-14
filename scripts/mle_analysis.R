@@ -25,6 +25,8 @@ proj_name <- args[5]
 organism <- args[6]
 norm_method <- args[7]
 fdr_threshold <- as.numeric(args[8])
+y_cap <- as.numeric(args[9])
+effect_thr <- as.numeric(args[10])
 
 # -------------------------
 # Ensure output directory exists
@@ -217,9 +219,12 @@ p_map <- MapRatesView(cs) +
 ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 10, height = 8, dpi = 150)
 
 # -------------------------
-# Volcano (diff vs -log10 FDR)
+# Volcano (diff vs -log10 FDR) with cap + effect-size guides
 # -------------------------
 treat_fdr_col <- fdr_treat_col
+
+# tuning knobs
+eps        <- 1e-16       # protects against FDR==0
 
 # Base dataframe: betas + FDR
 vol_df <- merge(
@@ -231,32 +236,42 @@ vol_df <- merge(
 # Effect size and robust FDR transforms
 vol_df$diff     <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
 vol_df$FDR_num  <- suppressWarnings(as.numeric(vol_df[[treat_fdr_col]]))
-vol_df$LogFDR   <- -log10(pmax(vol_df$FDR_num, .Machine$double.xmin))
+vol_df$LogFDR   <- -log10(pmax(vol_df$FDR_num, eps))
+vol_df$LogFDR_c <- pmin(vol_df$LogFDR, y_cap)  # cap for presentation
 
 # Keep rows with finite values
-vol_df <- vol_df[is.finite(vol_df$diff) & is.finite(vol_df$LogFDR), , drop = FALSE]
+vol_df <- vol_df[is.finite(vol_df$diff) & is.finite(vol_df$LogFDR_c), , drop = FALSE]
 
-## --- MAGeCKFlute volcano (kept for reference; saved with distinct name) ---
-p_vol_flute <- ScatterView(vol_df, x = "diff", y = "LogFDR", label = "Gene",
+# Threshold line for FDR (respect cap so it's always visible)
+thr_line <- min(-log10(fdr_threshold), y_cap)
+
+## --- MAGeCKFlute volcano (capped) ---
+p_vol_flute <- ScatterView(vol_df, x = "diff", y = "LogFDR_c", label = "Gene",
                            model = "volcano", top = 20) +
-  ggtitle(sprintf("Volcano (Flute): %s vs %s (norm=%s, FDR≤%.2f)",
-                  treatname, ctrlname, nm, fdr_threshold))
+  ggtitle(sprintf("Volcano (Flute): %s vs %s (norm=%s, FDR≤%.2f, y≤%d)",
+                  treatname, ctrlname, nm, fdr_threshold, y_cap)) +
+  geom_hline(yintercept = thr_line, linetype = "dotted", color = "grey40") +
+  geom_vline(xintercept = 0,         linetype = "dashed", color = "grey70") +
+  geom_vline(xintercept = c(-effect_thr, effect_thr),
+             linetype = "dotted", color = "grey50")
 ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
        plot = p_vol_flute, width = 8, height = 6, dpi = 150)
 
 # -------------------------
-# Custom Volcano (diff vs -log10 FDR) with threshold lines and labels
+# Custom Volcano (capped) with threshold lines and labels
 # -------------------------
 # Top genes to label (best FDR, then largest |Δβ|)
 top_lab <- vol_df |>
   dplyr::arrange(FDR_num, dplyr::desc(abs(diff))) |>
   dplyr::slice_head(n = 20)
 
-p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR, color = LogFDR)) +
+p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR_c, color = LogFDR_c)) +
   geom_point(alpha = 0.85, size = 1.6, na.rm = TRUE) +
   # threshold lines
-  geom_hline(yintercept = -log10(fdr_threshold), linetype = "dotted", color = "grey40") +
+  geom_hline(yintercept = thr_line, linetype = "dotted", color = "grey40") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey70") +
+  geom_vline(xintercept = c(-effect_thr, effect_thr),
+             linetype = "dotted", color = "grey50") +
   # labels
   ggrepel::geom_text_repel(
     data = top_lab,
@@ -266,8 +281,9 @@ p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR, color = LogFDR)) +
   ) +
   theme_bw() +
   labs(
-    title = sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold),
-    x = "Δβ (treat - ctrl)", y = "-log10(FDR)", color = "-log10(FDR)"
+    title = sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f, y≤%d, |Δβ|≥%.2f guides)",
+                    treatname, ctrlname, nm, fdr_threshold, y_cap, effect_thr),
+    x = "Δβ (treat − ctrl)", y = "-log10(FDR)", color = "-log10(FDR, capped)"
   ) +
   scale_colour_gradient(low = "#ff7f00", high = "#7570b3")
 
