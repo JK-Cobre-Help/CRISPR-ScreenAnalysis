@@ -180,6 +180,18 @@ if (length(fdr_keep) > 1) {
 # If original FDR columns exist with ".fdr" suffix, also add friendly aliases
 if (fdr_ctrl_col %in% names(sel_df))  sel_df[[paste0(ctrlname,  "_FDR")]]  <- sel_df[[fdr_ctrl_col]]
 if (fdr_treat_col %in% names(sel_df)) sel_df[[paste0(treatname, "_FDR")]] <- sel_df[[fdr_treat_col]]
+
+# Order selection table by absolute effect size (|Δβ|)
+if (paste0(treatname, "_FDR") %in% names(sel_df) && "diff" %in% names(sel_df)) {
+  sel_df <- sel_df |>
+    dplyr::mutate(effect_abs = abs(diff)) |>
+    dplyr::arrange(dplyr::desc(effect_abs), .data[[paste0(treatname, "_FDR")]])
+} else if ("diff" %in% names(sel_df)) {
+  sel_df <- sel_df |>
+    dplyr::mutate(effect_abs = abs(diff)) |>
+    dplyr::arrange(dplyr::desc(effect_abs))
+}
+
 write.table(sel_df, file.path(output_dir, sprintf("selection_table.norm_%s.tsv", nm)), sep="\t", quote=FALSE, row.names=FALSE)
 
 # -------------------------
@@ -279,7 +291,8 @@ if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(vol_df)) {
 
 sig_list <- vol_df |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]]), .data[[treat_fdr_col]] <= fdr_threshold) |>
-  dplyr::arrange(.data[[treat_fdr_col]]) |>
+  dplyr::mutate(effect_abs = abs(diff)) |>
+  dplyr::arrange(dplyr::desc(effect_abs), .data[[treat_fdr_col]]) |>
   dplyr::select(all_of(keep_cols))
 
 # Friendly column names
