@@ -25,6 +25,10 @@ organism: "hsa"            # can also
 norm_method: "none"        # optional; can be "cc" or "loess"
 fdr_threshold: 0.10
 
+## Volcano Plot Settings
+y_cap: 10                  # cap for -log10(FDR) in plots
+effect_thr: 0.50           # draw vertical guides at ±effect_thr on Δβ
+
 ## environment modules
 fastqc: "fastqc/0.12.1"
 multiqc: "multiqc/1.21"
