@@ -226,8 +226,10 @@ vol_df <- merge(
   by = "Gene", all.x = TRUE
 )
 vol_df$diff   <- as.numeric(vol_df[[treatname]]) - as.numeric(vol_df[[ctrlname]])
-vol_df$LogFDR <- -log10(vol_df[[treat_fdr_col]])
+vol_df$LogFDR <- -log10(as.numeric(vol_df[[treat_fdr_col]]))
+vol_df$LogFDR[!is.finite(vol_df$LogFDR)] <- -log10(.Machine$double.xmin)
 p_vol <- ScatterView(vol_df, x="diff", y="LogFDR", label="Gene", model="volcano", top=10) +
+  scale_colour_gradient(low = "#ff7f00", high = "#7570b3", na.value = "grey80") +
   ggtitle(sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f)", treatname, ctrlname, nm, fdr_threshold))
 ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"), plot = p_vol, width = 8, height = 6, dpi = 150)
 
