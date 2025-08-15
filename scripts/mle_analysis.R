@@ -307,8 +307,8 @@ p_beta_scatter <- ggplot(df_scatter, aes(
   geom_point(alpha = 0.8, size = 1.6) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   theme_bw() +
-  labs(title = sprintf("Beta vs Beta (%s): %s vs %s", nm, treatname, ctrlname, treatname),
-       x = sprintf("%s beta", ctrlname), y = sprintf("%s beta"),
+  labs(title = sprintf("Beta vs Beta (%s): %s vs %s", nm, treatname, ctrlname),
+       x = sprintf("%s beta", ctrlname), y = sprintf("%s beta", treatname),
        color = sprintf("%s FDR", treatname)) +
   scale_colour_gradient(low = "#ff7f00", high = "#7570b3")  +
   theme(plot.title = element_text(hjust = 0.5))
