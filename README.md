@@ -331,7 +331,8 @@ sbatch --wrap="snakemake -j 999 --use-envmodules --rerun-incomplete --latency-wa
 
 + **Kevin A. Boyd** – Designed and implemented the Snakemake workflow for a Slurm-managed HPC environment, modularized the pipeline structure, implemented all processing steps, designed custom volcano/beta score plots, and created the documentation.  
 + **Jacob Kirkland** – Principal Investigator; provided experimental data and validation of activation screen logic.
-+ **Christopher L. Sansam** – Principal Investigator; provided additional experimental data and validation of knockout screen logic.  
++ **Christopher L. Sansam** – Principal Investigator; experimental data and validation of knockout screen logic.
++ **Dean Dawson** - Principal Investigator; provided experimental data used in example plots.  
 
 This workflow was developed as part of a COBRE-funded collaborative effort. While the pipeline was built specifically for use within the Kirkland Lab, it is broadly applicable to CRISPR-Screen data analysis in other research settings.  
 
