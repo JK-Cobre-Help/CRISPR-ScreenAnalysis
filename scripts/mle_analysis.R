@@ -248,7 +248,7 @@ thr_line <- min(-log10(fdr_threshold), y_cap)
 ## --- MAGeCKFlute volcano (capped) ---
 p_vol_flute <- ScatterView(vol_df, x = "diff", y = "LogFDR_c", label = "Gene",
                            model = "volcano", top = 20) +
-  ggtitle(sprintf("Volcano (Flute): %s vs %s (norm=%s, FDR≤%.2f, y≤%d)",
+  ggtitle(sprintf("%s vs %s (norm=%s, FDR≤%.2f, y≤%d)",
                   treatname, ctrlname, nm, fdr_threshold, y_cap)) +
   geom_hline(yintercept = thr_line, linetype = "dotted", color = "grey40") +
   geom_vline(xintercept = 0,         linetype = "dashed", color = "grey70") +
@@ -281,7 +281,7 @@ p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR_c, color = LogFDR_c)) +
   ) +
   theme_bw() +
   labs(
-    title = sprintf("Volcano: %s vs %s (norm=%s, FDR≤%.2f, y≤%d, |Δβ|≥%.2f guides)",
+    title = sprintf("%s vs %s (norm=%s, FDR≤%.2f, y≤%d, |Δβ|≥%.2f guides)",
                     treatname, ctrlname, nm, fdr_threshold, y_cap, effect_thr),
     x = "Δβ (treat − ctrl)", y = "-log10(FDR)", color = "-log10(FDR, capped)"
   ) +
