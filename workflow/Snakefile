@@ -165,7 +165,7 @@ rule all:
         *([f"{OUT_DIR}/qc_zero_counts.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/qc_maprates.png"] if MLE_ENABLED else []),
         *([f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv"] if MLE_ENABLED else []),
-        *([f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"] if MLE_ENABLED else []),
+        *([f"{OUT_DIR}/{PROJ_NAME}_sig_hits_treatmentFDR_{FDR_THR_STR}.tsv"] if MLE_ENABLED else []),
         *(["results/logs/stage_fastqs.cleaned"] if STAGE else [])
 
 ##################################################################
@@ -451,7 +451,7 @@ if MLE_ENABLED:
             volcano = f"{OUT_DIR}/volcano_diff_vs_neglog10FDR.png",
             cust_volcano = f"{OUT_DIR}/custom_volcano_diff_vs_neglog10FDR.png",
             selection_table = f"{OUT_DIR}/selection_table.norm_{NORM_METHOD_STR}.tsv",
-            sig_hits = f"{OUT_DIR}/{PROJ_NAME}_sig_hits_FDR_{FDR_THR_STR}.tsv"
+            sig_hits = f"{OUT_DIR}/{PROJ_NAME}_sig_hits_treatmentFDR_{FDR_THR_STR}.tsv"
         params:
             out_dir = OUT_DIR,
             proj_name = PROJ_NAME,
