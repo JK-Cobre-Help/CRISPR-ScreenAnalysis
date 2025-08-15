@@ -243,15 +243,15 @@ All plots are saved in `results/plots/` unless otherwise specified.
 
 | Plot | Example Filename | Description |
 |------|------------------|-------------|
+| **QC Plot: Mapping Rates** | `qc_maprates.png` | Mapping rate for each sample from the count summary. |
+| **QC Plot: Zero Count sgRNAs** | `qc_zero_counts.png` | Bar plot showing the number of sgRNAs with zero reads per sample. |
+| **QC Plot: Gini Index** | `qc_gini.png` | Bar plot showing Gini index for each sample (evenness of sgRNA distribution). |
 | **β Score Histograms** | `beta_hist.png` | Side-by-side histograms of β score distributions for control and treatment samples. |
 | **β Score Normalization Comparison** | `beta_norm.png` | Density plots comparing raw β scores with cell-cycle and loess normalization methods. |
 | **β vs β Scatter Plot** | `beta_scatter.png` | Scatter plot comparing β scores for control (x-axis) vs treatment (y-axis), colored by FDR. |
 | **β vs β Scatter Plot (Labeled)** | `beta_scatter_labeled.png` | Same as above, but with top-ranked genes labeled using `ggrepel`. |
 | **Volcano Plot** | `volcano_diff_vs_neglog10FDR.png` | Effect size (β score difference) vs -log10(FDR) for treatment samples. |
-| **Custom Volcano Plot** | `custom_volcano_diff_vs_neglog10FDR.png` | Effect size (β score difference) vs -log10(FDR) for treatment samples. |
-| **QC Plot – Gini Index** | `qc_gini.png` | Bar plot showing Gini index for each sample (evenness of sgRNA distribution). |
-| **QC Plot – Zero Count sgRNAs** | `qc_zero_counts.png` | Bar plot showing the number of sgRNAs with zero reads per sample. |
-| **QC Plot – Mapping Rates** | `qc_maprates.png` | Mapping rate for each sample from the count summary. |
+| **Custom Volcano Plot** | `custom_volcano_diff_vs_neglog10FDR.png` | Effect size (β score difference) vs -log10(FDR) for treatment samples with lowest treatment FDR labeled. |
 
 **MAGeCKFlute Directory**  
 + **Note**: The workflow also generates a directory:  
