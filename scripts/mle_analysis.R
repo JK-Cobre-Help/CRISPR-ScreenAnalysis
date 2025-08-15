@@ -248,8 +248,8 @@ thr_line <- min(-log10(fdr_threshold), y_cap)
 ## --- MAGeCKFlute volcano (capped) ---
 p_vol_flute <- ScatterView(vol_df, x = "diff", y = "LogFDR_c", label = "Gene",
                            model = "volcano", top = 20) +
-  ggtitle(sprintf("%s vs %s (norm=%s, FDR≤%.2f, y≤%d)",
-                  treatname, ctrlname, nm, fdr_threshold, y_cap)) +
+  ggtitle(sprintf("%s vs %s (norm=%s)",
+                  treatname, ctrlname, nm)) +
   geom_hline(yintercept = thr_line, linetype = "dotted", color = "grey40") +
   geom_vline(xintercept = 0,         linetype = "dashed", color = "grey70") +
   geom_vline(xintercept = c(-effect_thr, effect_thr),
@@ -281,11 +281,12 @@ p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR_c, color = LogFDR_c)) +
   ) +
   theme_bw() +
   labs(
-    title = sprintf("%s vs %s (norm=%s, FDR≤%.2f, y≤%d, |Δβ|≥%.2f guides)",
-                    treatname, ctrlname, nm, fdr_threshold, y_cap, effect_thr),
+    title = sprintf("%s vs %s (norm=%s)",
+                    treatname, ctrlname, nm),
     x = "Δβ (treat − ctrl)", y = "-log10(FDR)", color = "-log10(FDR, capped)"
   ) +
-  scale_colour_gradient(low = "#7570b3", high = "#ff7f00")
+  scale_colour_gradient(low = "#7570b3", high = "#ff7f00")  +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ggsave(file.path(output_dir, "custom_volcano_diff_vs_neglog10FDR.png"),
        plot = p_vol_custom, width = 8, height = 6, dpi = 150)
@@ -306,10 +307,11 @@ p_beta_scatter <- ggplot(df_scatter, aes(
   geom_point(alpha = 0.8, size = 1.6) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   theme_bw() +
-  labs(title = sprintf("Beta vs Beta (%s): %s vs %s (color = %s FDR)", nm, treatname, ctrlname, treatname),
-       x = sprintf("%s beta", ctrlname), y = sprintf("%s beta", treatname),
+  labs(title = sprintf("Beta vs Beta (%s): %s vs %s", nm, treatname, ctrlname, treatname),
+       x = sprintf("%s beta", ctrlname), y = sprintf("%s beta"),
        color = sprintf("%s FDR", treatname)) +
-  scale_colour_gradient(low = "#ff7f00", high = "#7570b3")
+  scale_colour_gradient(low = "#ff7f00", high = "#7570b3")  +
+  theme(plot.title = element_text(hjust = 0.5))
 
 top_lab <- df_scatter |>
   dplyr::filter(!is.na(.data[[treat_fdr_col]])) |>
