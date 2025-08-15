@@ -352,9 +352,9 @@ sig_list <- vol_df |>
 treat_fdr_out <- paste0(treatname, "_FDR")
 ctrl_fdr_out  <- paste0(ctrlname,  "_FDR")
 
-names(sig_list)[names(sig_list) == ctrlname]        <- paste0(ctrlname,  "_beta")
-names(sig_list)[names(sig_list) == treatname]       <- paste0(treatname, "_beta")
-names(sig_list)[names(sig_list) == treat_fdr_col]   <- treat_fdr_out
+names(sig_list)[names(sig_list) == ctrlname] <- paste0(ctrlname,  "_beta")
+names(sig_list)[names(sig_list) == treatname] <- paste0(treatname, "_beta")
+names(sig_list)[names(sig_list) == treat_fdr_col] <- treat_fdr_out
 if (!is.na(fdr_ctrl_col) && fdr_ctrl_col %in% names(sig_list)) {
   names(sig_list)[names(sig_list) == fdr_ctrl_col] <- ctrl_fdr_out
 }
@@ -372,5 +372,5 @@ if (ctrl_fdr_out %in% names(sig_list)) keep_cols <- c(keep_cols, ctrl_fdr_out)
 
 sig_list <- sig_list[, keep_cols, drop = FALSE]
 
-sig_path <- file.path(output_dir, sprintf("%s_sig_hits_FDR_%.2f.tsv", proj_name, fdr_threshold))
+sig_path <- file.path(output_dir, sprintf("%s_sig_hits_treatmentFDR_%.2f.tsv", proj_name, fdr_threshold))
 write.table(sig_list, sig_path, sep = "\t", quote = FALSE, row.names = FALSE)
