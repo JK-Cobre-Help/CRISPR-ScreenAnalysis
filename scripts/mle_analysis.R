@@ -224,7 +224,7 @@ ggsave(file.path(output_dir, "qc_maprates.png"), plot = p_map, width = 10, heigh
 treat_fdr_col <- fdr_treat_col
 
 # tuning knobs
-eps        <- 1e-16       # protects against FDR==0
+eps <- 1e-16       # protects against FDR==0
 
 # Base dataframe: betas + FDR
 vol_df <- merge(
@@ -251,7 +251,7 @@ p_vol_flute <- ScatterView(vol_df, x = "diff", y = "LogFDR_c", label = "Gene",
   ggtitle(sprintf("%s vs %s (norm=%s)",
                   treatname, ctrlname, nm)) +
   geom_hline(yintercept = thr_line, linetype = "dotted", color = "grey40") +
-  geom_vline(xintercept = 0,         linetype = "dashed", color = "grey70") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey70") +
   geom_vline(xintercept = c(-effect_thr, effect_thr),
              linetype = "dotted", color = "grey50")
 ggsave(file.path(output_dir, "volcano_diff_vs_neglog10FDR.png"),
@@ -318,7 +318,7 @@ top_lab <- df_scatter |>
   dplyr::mutate(delta_beta = .data[[treatname]] - .data[[ctrlname]],
                 effect_abs = abs(delta_beta)) |>
   dplyr::arrange(.data[[treat_fdr_col]], dplyr::desc(effect_abs)) |>
-  dplyr::slice_head(n = 30)
+  dplyr::slice_head(n = 20)
 
 p_beta_scatter_labeled <- p_beta_scatter +
   ggrepel::geom_text_repel(
