@@ -93,13 +93,13 @@ stopifnot(ctrlname %in% names(gdata), treatname %in% names(gdata))
 p1 <- ggplot(gdata, aes(x = .data[[ctrlname]])) +
   geom_histogram(bins = 50) +
   theme_bw() +
-  labs(title = sprintf("Beta score distribution (%s vs %s)", treatname, ctrlname),
+  labs(title = sprintf("Beta score distribution (%s)", ctrlname),
        x = "Beta", y = "Count")
 
 p2 <- ggplot(gdata, aes(x = .data[[treatname]])) +
   geom_histogram(bins = 50) +
   theme_bw() +
-  labs(title = sprintf("Beta score distribution (%s vs %s)", treatname, ctrlname),
+  labs(title = sprintf("Beta score distribution (%s)", treatname),
        x = "Beta", y = "Count")
 
 # plot histograms them side by side
@@ -285,7 +285,7 @@ p_vol_custom <- ggplot(vol_df, aes(x = diff, y = LogFDR_c, color = LogFDR_c)) +
                     treatname, ctrlname, nm, fdr_threshold, y_cap, effect_thr),
     x = "Δβ (treat − ctrl)", y = "-log10(FDR)", color = "-log10(FDR, capped)"
   ) +
-  scale_colour_gradient(low = "#ff7f00", high = "#7570b3")
+  scale_colour_gradient(low = "#7570b3", high = "#ff7f00")
 
 ggsave(file.path(output_dir, "custom_volcano_diff_vs_neglog10FDR.png"),
        plot = p_vol_custom, width = 8, height = 6, dpi = 150)
