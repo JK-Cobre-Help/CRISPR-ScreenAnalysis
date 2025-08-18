@@ -203,7 +203,7 @@ N3_D14_PAC,/path/to/N3_D14_PAC_S30_R1_001.fastq.gz,/path/to/N3_D14_PAC_S30_R2_00
 + **QC Steps** – `fastq1`/`fastq2` are passed directly to FastQC and MultiQC.  
 + **MAGeCK Count** – `sample` names become the `--sample-label` list; FASTQ paths are passed to `--fastq` / `--fastq-2`.  
 + **Design Matrix Building** – Only rows with `include_mle = true` are included. The `factor` column determines grouping for β score estimation.  
-+ **Plotting** – `factor` labels are used to determine control vs treatment in MAGeCKFlute visualizations. The first `factor` provided will be set as the control (x-axis) while the last `factor` provided will be the treatment (y-axis) of the β score plots.  
++ **Plotting** – `factor` labels are used to determine control vs treatment in MAGeCKFlute visualizations. The first `factor` provided will be set as the control (x-axis) while the last `factor` provided will be the treatment (y-axis) of the β score plots. The last factor will also be used for FDR coloring and label significant genes.  
 
 ### Troubleshooting Common Errors
 | Problem | Cause | Fix |
