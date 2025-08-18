@@ -172,7 +172,7 @@ The `samples.csv` file defines all input samples and their associated metadata.
 | `fastq1`       | Full path to the R1 FASTQ file. Must point to an existing file readable by the compute environment. |
 | `fastq2`       | Full path to the R2 FASTQ file (paired-end) or left blank if single-end. |
 | `include_mle`  | Boolean flag (`true` or `false`) indicating whether this sample should be included in the MAGeCK MLE analysis and design matrix. |
-| `factor`       | Experimental condition label for the sample. Use `none` for baseline/control samples; other values should be short condition names (no spaces). |
+| `factor`       | Experimental condition label for the sample. Use `none` for baseline/control samples; other values should be short condition names (no spaces). The first factor provided will be plotted on the x-axis (control) while the last factor provided will be plotted on the y-axis (treatment) and be used to color the FDR and label significant genes. |
 
 ### Rules for Valid Entries
 + **Unique `sample` values** – duplicate names will overwrite outputs and break downstream steps. Do not use the exact same name as factor.    
